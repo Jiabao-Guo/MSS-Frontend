@@ -1,0 +1,23 @@
+{
+  "name": "webstorm",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "axios": "^1.2.2",
+    "element-plus": "^2.2.28",
+    "icons-vue": "^1.0.9",
+    "vue": "^3.2.45",
+    "vue-router": "^4.1.6"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^4.0.0",
+    "sass": "^1.57.1",
+    "scss": "^0.2.4",
+    "vite": "^4.0.0"
+  }
+}
