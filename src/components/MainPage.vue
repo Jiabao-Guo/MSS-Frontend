@@ -49,19 +49,10 @@ import McpApplication from "@/components/widget/McpApplication.vue";
               </el-sub-menu>
             </el-sub-menu>
 
-            <el-sub-menu index="course">
-              <template #title>
-                <el-icon><location /></el-icon>
-                <span>Course</span>
-              </template>
-              <el-sub-menu index="2-1">
-                <template #title>SubItem 1</template>
-              </el-sub-menu>
-              <el-sub-menu index="2-2">
-                <template #title>SubItem 2</template>
-              </el-sub-menu>
-            </el-sub-menu>
-
+            <el-menu-item index="course">
+              <el-icon><location /></el-icon>
+              <span>Course</span>
+            </el-menu-item>
 
             <el-menu-item index="grade">
               <el-icon><document /></el-icon>
@@ -78,15 +69,15 @@ import McpApplication from "@/components/widget/McpApplication.vue";
                 <el-icon><location /></el-icon>
                 <span>Rate</span>
               </template>
-              <el-menu-item index="professor information">
+              <el-menu-item index="professor-information">
                 <template #title>Professor Information</template>
               </el-menu-item>
-              <el-menu-item index="rate form">
+              <el-menu-item index="rate-form">
                 <template #title>Rate Form</template>
               </el-menu-item>
             </el-sub-menu>
 
-            <el-menu-item index="map application" >
+            <el-menu-item index="mcp-application" >
               <el-icon><setting /></el-icon>
               <span>McpApplication</span>
             </el-menu-item>

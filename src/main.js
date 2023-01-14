@@ -62,19 +62,21 @@ let router = createRouter({
                 },
 
                 {
-                    path:'/professor information',
+                    path:'/professor-information',
                     component: ProfessorInformation,
                 },
 
                 {
-                    path:'/rate form',
+                    path:'/rate-form',
                     component: RateForm,
                 },
 
                 {
-                    path:'/map application',
+                    path:'/mcp-application',
                     component: McpApplication,
-                }
+                },
+
+
 
 
             ]
