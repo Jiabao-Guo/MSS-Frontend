@@ -7,6 +7,8 @@ I am student registration page
 export default {
   name: "StudentRegistrationPage"
 }
+
+
 </script>
 
 <style scoped>

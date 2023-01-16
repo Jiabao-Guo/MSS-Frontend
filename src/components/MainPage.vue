@@ -98,22 +98,19 @@ import McpApplication from "@/components/widget/McpApplication.vue";
 
 <script>
 import axios from "axios";
+import {ElMessageBox} from "element-plus";
 
 export default {
 
 mounted() {
-    this.issessionId()
+    this.checkSessionId()
 },
   data() {
     return {
-      /* 主页，课程列表页（含查询课程信息），成绩列表（只能看自己的成绩）*/
-      /* 主页放跑马灯比较合适 */
-      currentSubject: 'mainpage', // main / grade / course
     }
   },
   methods: {
-
-    issessionId() {
+    checkSessionId() {
       axios.post('http://localhost:8080/greetings', {
         studentNumber: localStorage.getItem("student_number"),
         sessionId: localStorage.getItem("session"),
@@ -121,22 +118,19 @@ mounted() {
 
         /** 将前端方法返回的结果 全部存入 res.data 并且用 response接收*/
         let response = res.data
-
-        alert(response.name)
-
-
+        ElMessageBox.alert(`Hello, ${response.name}!`, 'Welcome', {
+          confirmButtonText: 'OK'
+        })
       })
     }
   }
-
 }
 </script>
 
 
-
 <style scoped>
 
-.common-layout{
+.common-layout {
   width: 100%;
   height: 100%;
   position: absolute;

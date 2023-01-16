@@ -30,6 +30,7 @@
 
 <script>
 import axios from "axios";
+import {ElMessage} from "element-plus";
 
 export default {
   data() {
@@ -58,10 +59,16 @@ export default {
         let response = res.data
 
         if (!response.isSuccess) {
-          alert(response.message)
+          ElMessage({
+            message: response.message,
+            type: 'error'
+          })
           return
         }
-        alert(response.message)
+        ElMessage({
+          message: response.message,
+          type: 'success'
+        })
 
         /**  用过response.sessionId 拿到后端设置的值(手环)
          *   二次加密
