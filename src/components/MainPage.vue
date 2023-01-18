@@ -15,7 +15,9 @@ import McpApplication from "@/components/widget/McpApplication.vue";
     <el-container style="height: 100%">
 
       <!-- Header，顶部横条 -->
-      <el-header>Header</el-header>
+      <el-header>
+        <el-button @click="handleToggleDark">切换！</el-button>
+      </el-header>
 
       <el-container>
         <!-- 左侧侧边栏 -->
@@ -99,6 +101,9 @@ import McpApplication from "@/components/widget/McpApplication.vue";
 <script>
 import axios from "axios";
 import {ElMessageBox} from "element-plus";
+import {ref} from 'vue';
+
+import {useDark} from "@vueuse/core";
 
 export default {
 
@@ -122,6 +127,19 @@ mounted() {
           confirmButtonText: 'OK'
         })
       })
+    },
+
+    handleToggleDark() {
+
+      //import { useDark, useToggle } from '@vueuse/core'
+      //const isDark = useDark()
+      //const toggleDark = useToggle(isDark)
+
+      let darkState = useDark()
+      let darkStateRef = ref(darkState)
+      darkStateRef.value = !darkStateRef.value
+
+      console.log("!?")
     }
   }
 }

@@ -1,4 +1,21 @@
 <template>
+  <!-- 筛选 -->
+  <el-form :inline="true" :model="queryForm" >
+    <el-form-item label="Salary Range">
+      <div>
+        From: <el-input v-model="queryForm.min" placeholder="Min salary" style="width: 100px" />
+        To: <el-input v-model="queryForm.max" placeholder="Max salary" style="width: 100px" />
+      </div>
+    </el-form-item>
+
+    <el-form-item label="Professor Name">
+      <el-input v-model="queryForm.name"  placeholder="Professor name" />
+    </el-form-item>
+
+    <el-button @click="handleQuery">Query</el-button>
+  </el-form>
+
+  <!-- 表格 -->
   <el-table :data="tableData" stripe class="data-table">
     <el-table-column prop="instructorNumber" label="Instructor Number" width="180" />
     <el-table-column prop="salary" label="Salary" width="180" />
@@ -36,6 +53,8 @@
       @current-change="handleCurrentChange"
   />
 </template>
+
+
 <script>
 import axios from "axios";
 export default {
@@ -50,7 +69,13 @@ export default {
       pageSize: 40,
 
       totalSize: 0,
-      tableData: []
+      tableData: [],
+
+      queryForm: {
+        min: '',
+        max: '',
+        name:''
+      }
     }
   },
 
@@ -68,12 +93,52 @@ export default {
       this.loadPage()
     },
 
+    handleQuery() {
+      let minResult = parseFloat(this.queryForm.min)
+      let maxResult = parseFloat(this.queryForm.max)
+      let nameResult = this.queryForm.name;
+
+      // undefined, null均视为false, ""
+      if (isNaN(minResult) || !minResult) {
+        minResult = -1;
+      }
+      if(isNaN(maxResult) || !maxResult){
+        maxResult = 2147483647; // (2 << 30) - 1;
+      }
+
+      // undefined, null
+      if (!nameResult) {
+        nameResult = "";
+      }
+
+
+      /*
+    private Integer page;
+    private Integer amount;
+    private Double min;
+    private Double max;
+    private String name;
+       */
+
+      axios.post("http://localhost:8080/instructor/query", {
+        page: this.currentPage - 1,
+        amount: this.pageSize,
+        min:minResult,
+        max:maxResult,
+        name:nameResult
+      }).then(response => {
+        this.tableData = response.data.content
+        this.totalSize = response.data.totalElements
+
+      })
+    },
     loadPage() {
-      // 格式: http://a.com/xxx?name=Bob&age=20&salary=10000
+      //get适用于 不做更新删除 只有查询
+      // get格式: http://a.com/xxx? 后端需要的参数 =${this.currentPage-1}&后端需要的参数=${this.pageSize}
       // 根据后端的 InstructorController
       //@RequestMapping("/instructor")
       //@Request..前段传来的数据
-      // Page<Instructor> findAll(@RequestParam Integer [page], @RequestParam Integer [amount]) {
+      // Page<Instructor> findAll(@RequestParam Integer [[page]], @RequestParam Integer [[amount]]) {
          //构造pageable
        //  Pageable pageable = PageRequest.of(page, amount);
        // return instructorRepository.findAll(pageable);
@@ -81,6 +146,8 @@ export default {
 
       axios.get(`http://localhost:8080/instructor?page=${this.currentPage-1}&amount=${this.pageSize}`)
           .then(response => {
+            //可以将需要的 字段 全部打印出来..通过打印 可以知道从后端取出了哪些字段,例如:content和totalElements
+            console.log(response)
         // 得到的instructor数组
         this.tableData = response.data.content
 

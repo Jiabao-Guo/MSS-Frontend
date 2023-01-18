@@ -1,5 +1,4 @@
-<template >
-
+<template>
   <el-carousel :interval="4000" type="card" height="400px" style="margin-top: 200px">
     <el-carousel-item class="item" v-for="item in [0,1,2,3,4,5]" :key="item">
       <img style="width: 100%; height: 100%" src="http://mikutart.com/ha.jpg">
