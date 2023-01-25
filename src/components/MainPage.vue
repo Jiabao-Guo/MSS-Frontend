@@ -15,8 +15,12 @@ import McpApplication from "@/components/widget/McpApplication.vue";
     <el-container style="height: 100%">
 
       <!-- Header，顶部横条 -->
-      <el-header>
-        <el-button @click="handleToggleDark">切换！</el-button>
+      <el-header class="header-container">
+        <h2 class="header-title">MSS Frontend - {{ name }}</h2>
+        <el-button class="toggle-button" @click="handleToggleDark">
+          <el-icon><svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg" data-v-029747aa=""><path fill="currentColor" d="M240.448 240.448a384 384 0 1 0 559.424 525.696 448 448 0 0 1-542.016-542.08 390.592 390.592 0 0 0-17.408 16.384zm181.056 362.048a384 384 0 0 0 525.632 16.384A448 448 0 1 1 405.056 76.8a384 384 0 0 0 16.448 525.696z"></path></svg></el-icon>
+          暗いモード</el-button>
+        <el-divider class="header-divider"></el-divider>
       </el-header>
 
       <el-container>
@@ -112,6 +116,7 @@ mounted() {
 },
   data() {
     return {
+      name: ''
     }
   },
   methods: {
@@ -123,6 +128,7 @@ mounted() {
 
         /** 将前端方法返回的结果 全部存入 res.data 并且用 response接收*/
         let response = res.data
+        this.name = response.name
         ElMessageBox.alert(`Hello, ${response.name}!`, 'Welcome', {
           confirmButtonText: 'OK'
         })
@@ -152,6 +158,32 @@ mounted() {
   width: 100%;
   height: 100%;
   position: absolute;
+}
+
+.header-container {
+  position: relative;
+}
+
+.header-title {
+  position: absolute;
+  margin: 0;
+  height: 50%;
+  left: 20px;
+  transform: translate(0, 50%);
+}
+
+.toggle-button {
+  position: absolute;
+  margin: 0;
+  height: 50%;
+  right: 20px;
+  transform: translate(0, 50%);
+}
+
+.header-divider {
+  position: absolute;
+  margin: 0;
+  bottom: 0;
 }
 
 </style>

@@ -87,7 +87,7 @@ export default {
 
 
 
-<style>
+<style scoped>
 .bg {
   background: url("@/assets/images/mun.jpg");
 
