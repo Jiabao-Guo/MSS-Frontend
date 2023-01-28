@@ -16,13 +16,26 @@
     <el-form-item>
       <el-button @click="handleQuery">Query</el-button>
     </el-form-item>
+
+    <el-form-item>
+      <el-button @click="handleDelete" type="danger" :disabled="currentSelection.length === 0">Delete</el-button>
+    </el-form-item>
+
+    <el-form-item>
+      <el-button text @click="handleAddInstructor">
+        Add Instructor
+      </el-button>
+    </el-form-item>
   </el-form>
 
   <!-- 表格 -->
   <el-table :data="tableData"
             v-loading="loading"
             stripe class="data-table"
-            @cell-dblclick="handleCellDoubleClick">
+            @cell-dblclick="handleCellDoubleClick"
+            @selection-change="handleSelectionChange">
+
+    <el-table-column type="selection" width="55" />
     <el-table-column prop="instructorNumber" label="Instructor Number" width="180" />
     <el-table-column prop="salary" label="Salary" width="180" />
     <el-table-column prop="name" label="Name" />
@@ -60,6 +73,33 @@
       @size-change="handleSizeChange"
       @current-change="handleCurrentChange"
   />
+
+
+  //增加教授信息
+  <el-dialog v-model="shouldShowAddingDialog" title="Adding Instructor Information" width="450px">
+    <el-form :model="addForm" :rules="addFormRules">
+      <el-form-item prop="instructorNumber" label="Instructor Number" :label-width="formLabelWidth">
+        <el-input v-model="addForm.instructorNumber" autocomplete="off" />
+      </el-form-item>
+
+      <el-form-item prop="salary" label="Salary" :label-width="formLabelWidth">
+        <el-input v-model="addForm.salary" autocomplete="off" />
+      </el-form-item>
+
+      <el-form-item prop="name" label="Name" :label-width="formLabelWidth">
+        <el-input v-model="addForm.name" autocomplete="off" />
+      </el-form-item>
+    </el-form>
+    <template #footer>
+      <span class="dialog-footer">
+        <el-button @click="shouldShowAddingDialog = false">Cancel</el-button>
+        <el-button type="primary" @click="handleConfirmAddingInstructor">
+          Add Instructor
+        </el-button>
+      </span>
+    </template>
+  </el-dialog>
+
 </template>
 
 
@@ -86,17 +126,45 @@ export default {
         name:''
       },
 
-      loading: false
+      addForm: {
+        instructorNumber: '',
+        salary: '',
+        name: ''
+      },
+
+      addFormRules: {
+        instructorNumber: [
+          { required: true, message: 'Instructor number must not be empty' },
+        ],
+        salary: [
+          { required: true, message: 'Salary must not be empty' },
+        ],
+        name: [
+          { required: true, message: 'Name must not be empty' },
+        ]
+      },
+
+      loading: false,
+      currentSelection: [],
+      shouldShowAddingDialog: false
     }
   },
 
   mounted() {
-
     //loadPage应该出现3次
     //this.loadPage()
     this.handleQuery()
   },
   methods: {
+    handleAddInstructor() {
+      this.shouldShowAddingDialog = true
+    },
+    handleConfirmAddingInstructor() {
+      this.shouldShowAddingDialog = false
+    },
+    handleSelectionChange(selection) {
+      this.currentSelection = selection
+    },
     handleSizeChange(val) {
       //每当页码改变时候 要刷新一遍
       //this.loadPage()
@@ -189,6 +257,43 @@ export default {
         this.totalSize = response.data.totalElements
       }).finally(() => {
         this.loading = false
+      })
+    },
+
+    // @DeleteMapping("/instructor/{instructorNumbers}")
+    handleDelete() {
+      ElMessageBox.confirm(
+          'Are you sure delete it?', "Warning", {
+            confirmButtonText: "Delete",
+            cancelButtonText: "Cancel",
+            type: "warning",
+          }
+      ).then(() => {
+        // f(x) = x+1
+        // S = {1,2,3,4}
+        // T = {f(1),f(2),f(3),f(4)}
+
+        // f(prof) = prof.num
+        // S = [ {num:1,name:xxx}, {num:2,name:yyy} ]
+        // T = [1,2]
+        // T1 = f(s1) = s1.num
+        // T2 =
+
+        // S map with f = T
+
+        let instructorNumbers1 = this.currentSelection
+            //x为 currentSelection中每个对象
+            .map((x) => x.instructorNumber)
+            .join(",")   //数组.join()分割为字符串加逗号
+
+        axios.delete(`http://localhost:8080/instructor/${instructorNumbers1}`).then(response => {
+          // 根据后端ResponseEntity<InstructorModifyResponse> modifyInstructor() 的参数
+          ElMessage({
+            message: response.data.messages,
+            type: response.data.isSuccess ? 'success' : 'error'
+          })
+          this.handleQuery()
+        })
       })
     },
     loadPage_Unused() {

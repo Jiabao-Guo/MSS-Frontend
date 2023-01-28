@@ -144,8 +144,6 @@ mounted() {
       let darkState = useDark()
       let darkStateRef = ref(darkState)
       darkStateRef.value = !darkStateRef.value
-
-      console.log("!?")
     }
   }
 }
