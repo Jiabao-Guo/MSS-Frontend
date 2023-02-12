@@ -74,8 +74,6 @@
       @current-change="handleCurrentChange"
   />
 
-
-  //增加教授信息
   <el-dialog v-model="shouldShowAddingDialog" title="Adding Instructor Information" width="450px">
     <el-form :model="addForm" :rules="addFormRules">
       <el-form-item prop="instructorNumber" label="Instructor Number" :label-width="formLabelWidth">
