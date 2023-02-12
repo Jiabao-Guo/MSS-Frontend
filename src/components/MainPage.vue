@@ -104,7 +104,7 @@ import McpApplication from "@/components/widget/McpApplication.vue";
 
 <script>
 import axios from "axios";
-import {ElMessageBox} from "element-plus";
+import {ElMessage} from "element-plus";
 import {ref} from 'vue';
 
 import {useDark} from "@vueuse/core";
@@ -129,9 +129,7 @@ mounted() {
         /** 将前端方法返回的结果 全部存入 res.data 并且用 response接收*/
         let response = res.data
         this.name = response.name
-        ElMessageBox.alert(`Hello, ${response.name}!`, 'Welcome', {
-          confirmButtonText: 'OK'
-        })
+        ElMessage.success(`Hello, ${response.name}!`)
       })
     },
 

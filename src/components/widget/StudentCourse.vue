@@ -1,6 +1,6 @@
 <template>
 
-  <el-table :data="tableData" stripe style="width: 100%"
+  <el-table :data="tableData" stripe style="margin-bottom: 8px;"
             @selection-change="handleSelectionChange"
             v-loading = "loading">
     <el-table-column type="selection" width="55" />
@@ -10,7 +10,7 @@
   </el-table>
 
   <el-form-item>
-    <el-button type="primary" @click="handleRegistrator">Registrator</el-button>
+    <el-button type="primary" @click="handleRegistrator">Register Selected</el-button>
     <el-button>Cancel</el-button>
   </el-form-item>
 
