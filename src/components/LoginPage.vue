@@ -141,13 +141,12 @@ export default {
   top: 0;
   z-index: 1;
   position: absolute;
-  box-shadow: greenyellow 0 0 240px;
-  transition: box-shadow 2s;
+  transition: box-shadow 0.5s;
   margin: 0;
 }
 
 .right:hover {
-  box-shadow: purple 0 0 240px 99px;
+  box-shadow: black 0 0 24px;
 }
 
 .contents {
