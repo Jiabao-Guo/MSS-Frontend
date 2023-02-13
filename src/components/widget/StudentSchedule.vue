@@ -90,7 +90,8 @@ export default {
       let res = await Net.post('/schedule/query', {
         studentNumber: localStorage.getItem("student_number"),
         sessionId: localStorage.getItem("session"),
-      }).catch(() => {})
+      }).catch(() => {
+      })
 
       if (!res.data.success) {
         ElMessage.error({
@@ -111,9 +112,16 @@ export default {
     async handleAddSchedule(event, data) {
       let date = this.keyFromDate(data.date);
       let subject = await ElMessageBox.prompt(`What's your plan on ${date}?`, 'New Schedule', {
-        confirmButtonText: 'Create'
+        confirmButtonText: 'Create',
+        draggable: true,
       })
-          .catch(() => {})
+          .catch(() => {
+          })
+
+      if (!subject || subject.action !== 'confirm') {
+        return
+      }
+
       let addScheduleForm = {
         studentNumber: localStorage.getItem("student_number"),
         sessionId: localStorage.getItem("session"),
@@ -126,7 +134,7 @@ export default {
         type: res.data.success ? 'success' : 'error',
         message: res.data.message
       })
-      this.reloadSchedule()
+      await this.reloadSchedule()
     },
     async handleUpdateSchedule(event, data, oldSchedule) {
       event.stopPropagation()
@@ -141,7 +149,7 @@ export default {
         inputPattern: /.+/,
         inputErrorMessage: 'Schedule must not be empty.',
         draggable: true,
-      }).then(  res => {
+      }).then(res => {
         let newSchedule = oldSchedule
         newSchedule.subject = res.value
         Net.put(`/schedule/${oldSchedule.id}`, newSchedule).then(r => {
@@ -150,10 +158,14 @@ export default {
             message: r.data.message
           })
           this.reloadSchedule()
-        }).catch(() => {})
+        }).catch(() => {
+        })
       }).catch((action) => {
         if (action === 'cancel') {
-          ElMessageBox.confirm('Are you sure to delete this?', 'Delete', { type: 'warning' }).then(() => {
+          ElMessageBox.confirm('Are you sure to delete this?', 'Delete', {
+            type: 'warning',
+            draggable: true,
+          }).then(() => {
             Net.delete(`/schedule/${oldSchedule.id}`).then(r => {
               ElMessage({
                 type: r.data.success ? 'success' : 'error',
@@ -161,8 +173,8 @@ export default {
               })
               this.reloadSchedule()
             })
+          }).catch(() => {
           })
-
         }
       })
     },

@@ -1,7 +1,7 @@
 <template>
   <GenericTable
-      model="instructor"
-      noun="Instructor"
+      model="course"
+      noun="Course"
       model-key="id"
       :columns="columns"
   />
@@ -13,10 +13,9 @@ import GenericTable from "@/components/generic/GenericTable.vue";
 
 const columns = reactive([
   {
-    prop: 'instructorNumber',
-    label: 'Instructor Number',
+    prop: 'courseNumber',
+    label: 'Course Number',
     dataType: 'number',
-    width: '180',
     asInsert: true,
     asFilter: true,
     modifiable: true,
@@ -25,13 +24,13 @@ const columns = reactive([
     },
     filterForm: {
       defaultValues: {
-        instructorNumber: ''
+        courseNumber: ''
       }
     }
   },
   {
     prop: 'name',
-    label: 'Instructor Name',
+    label: 'Name',
     dataType: 'string',
     width: '',
     asInsert: true,
@@ -47,27 +46,40 @@ const columns = reactive([
     },
   },
   {
-    prop: 'salary',
-    label: 'Salary',
-    dataType: 'number-range',
-    width: '180',
-    asInsert: true,
+    prop: 'instructorByInstructorNumber.name',
+    label: 'Taught By',
+    dataType: 'string',
+    width: '',
+    asInsert: false,
     asFilter: true,
-    modifiable: true,
+    modifiable: false,
     createForm: {
       rules: []
     },
     filterForm: {
-      minKey: 'min',
-      maxKey: 'max',
       defaultValues: {
-        min: '',
-        max: ''
+        'instructorByInstructorNumber.name': '',
       },
     },
+    alias: {
+      'instructorByInstructorNumber.name': 'instructorName'
+    }
+  },
+  {
+    prop: 'instructorByInstructorNumber.instructorNumber',
+    label: 'Instructor Number',
+    dataType: 'string',
+    width: '',
+    asInsert: true,
+    asFilter: false,
+    modifiable: true,
+    createForm: {},
+    filterForm: {},
+    alias: {
+      'instructorByInstructorNumber.instructorNumber': 'instructorNumber'
+    }
   },
 ])
-
 </script>
 
 <style scoped>

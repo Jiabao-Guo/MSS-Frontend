@@ -26,80 +26,20 @@
 
     <h3>Filters & Management</h3>
 
+    <FormItems
+        :columns="columns"
+        :target-form="filterForm"
+        mode="filter"
+        form-ref="filterFormRef"
+        inline
+        size="small"
+        label-position="left"
+    />
 
-    <el-form inline size="small">
-      <el-form-item
-          v-for="c in columns"
-          :key="c.prop"
-          :prop="c.prop"
-          :label="c.label"
-      >
-        <div v-if="c.form.dataType === 'string'">
-          <el-input
-              v-model="form[c.prop]"
-              autocomplete="off"
-              :placeholder="c.label"
-          />
-        </div>
-
-        <div v-else-if="c.form.dataType === 'number'">
-          <el-input
-              v-model="form[c.prop]"
-              :placeholder="c.label"
-          />
-        </div>
-
-        <div v-else-if="c.form.dataType === 'number-range'">
-          <el-row>
-            <el-col :span="6">
-              <el-input
-                  v-model="form[c.form.minKey]"
-                  placeholder="Min"
-              />
-            </el-col>
-            <div style="margin: 0 4px">~</div>
-            <el-col :span="6">
-              <el-input
-                  v-model="form[c.form.maxKey]"
-                  placeholder="Max"
-              />
-            </el-col>
-          </el-row>
-        </div>
-
-        <div v-else-if="c.form.dataType === 'datetime'">
-          <el-date-picker
-              v-model="form[c.prop]"
-              type="date"
-              placeholder="Select date"
-          />
-        </div>
-
-        <div v-else-if="c.form.dataType === 'select'">
-          <el-select v-model="form[c.prop]" placeholder="Select One">
-            <el-option
-                v-for="option in c.form.options"
-                :key="option.value"
-                :label="option.label"
-                :value="option.value"
-            />
-          </el-select>
-        </div>
-
-        <div v-else-if="c.form.dataType === 'switch'">
-          <el-switch v-model="form[c.prop]"/>
-        </div>
-
-        <div v-else>
-          Error type: {{ c.form.dataType }}
-        </div>
-      </el-form-item>
-
-      <slot name="filter"/>
-    </el-form>
-
-    <el-button type="success" size="default">
-      <el-icon><Check/></el-icon>&nbsp;
+    <el-button type="success" size="default" @click="handleApplyFilter">
+      <el-icon>
+        <Check/>
+      </el-icon>&nbsp;
       Apply Filter
     </el-button>
 
@@ -112,7 +52,9 @@
         type="primary"
         @click="handleAddModel"
     >
-      <el-icon><Plus/></el-icon>&nbsp;
+      <el-icon>
+        <Plus/>
+      </el-icon>&nbsp;
       Add {{ noun }}
     </el-button>
 
@@ -122,8 +64,10 @@
         v-if="currentSelection.length > 0"
         :disabled="currentSelection.length === 0"
     >
-      <el-icon><Close/></el-icon>&nbsp;
-      Delete {{ noun }}
+      <el-icon>
+        <Close/>
+      </el-icon>&nbsp;
+      Delete {{ currentSelection.length }} {{ noun }}(s)
     </el-button>
 
     <slot name="management"/>
@@ -178,12 +122,21 @@
       style="border-radius: 8px"
       class="create-dialog"
       :title="`Create ${noun}`"
-      width="450px"
+      width="480px"
       draggable
   >
-    <el-form :model="form" :rules="rules" label-width="150px">
 
-    </el-form>
+    <FormItems
+        :columns="columns"
+        :target-form="createForm"
+        :rules="rules"
+        mode="create"
+        form-ref="filterFormRef"
+        :inline="false"
+        size="default"
+        label-position="right"
+        label-width="220px"
+    />
 
     <template #footer>
       <span class="dialog-footer">
@@ -227,25 +180,35 @@ import {ElMessage, ElMessageBox} from "element-plus";
 import Net from "@/components/util/network";
 import {
   Check, Checked, CircleCheck,
-    Plus, Close
+  Plus, Close
 } from '@element-plus/icons-vue'
+import FormItems from "@/components/generic/FormItems.vue";
 
 const props = defineProps({
   model: String,
   noun: String,
   modelKey: String,
   columns: Array,
-  queryForm: Object,
   tableClass: String,
 })
 
 const rules = reactive(props.columns.reduce((acc, column) => {
-  acc[column.prop] = column.rules
+  acc[getProp(column, column.prop)] = column.rules
   return acc
 }, {}))
 
-const form = reactive(props.columns.reduce((acc, column) => {
-  acc[column.prop] = ''
+const filterForm = reactive(props.columns.reduce((acc, column) => {
+  if (!column.asFilter) {
+    return acc
+  }
+  for (let key in column.filterForm.defaultValues) {
+    acc[getProp(column, key)] = column.filterForm.defaultValues[key]
+  }
+  return acc
+}, {}))
+
+const createForm = reactive(props.columns.reduce((acc, column) => {
+  acc[getProp(column, column.prop)] = ''
   return acc
 }, {}))
 
@@ -262,12 +225,16 @@ const loading = ref(false)
 const currentSelection = ref([])
 const shouldShowAddingDialog = ref(false)
 
+function getProp(p, defaultKey) {
+  return (p.alias || {})[defaultKey] || defaultKey
+}
+
 async function reloadTableData() {
   loading.value = true
   let response = await Net.get(`/${props.model}`, {
     page: currentPage.value - 1,
     amount: pageSize.value,
-    ...props.queryForm
+    ...filterForm
   }).finally(() => {
     loading.value = false
   })
@@ -282,6 +249,7 @@ function handleAddModel() {
 
 function handleConfirmAddingModel() {
   shouldShowAddingDialog.value = false
+  handleCreateModel()
 }
 
 function handleSelectionChange(selection) {
@@ -298,20 +266,28 @@ function handleCurrentChange() {
 
 async function handleCellDoubleClick(row, column) {
   // 要修改的项目，比如双击的是name，那property就是name.
-  let property = column.property;
+  let targetColumn = props.columns.find((c) => c.label === column.label)
+  let property = getProp(targetColumn, targetColumn.prop);
 
-  if (!property) {
+  console.log(targetColumn, property)
+  if (!property || !targetColumn.modifiable) {
     return
   }
 
   // row就是整行的json
-  let action = await ElMessageBox.prompt(`Please input the new ${property}.`, "Edit", {
+  let action = await ElMessageBox.prompt(`Please input the new ${targetColumn.label}.`, "Edit", {
     // 把现在的值传进去
-    inputValue: row[property],
+    inputValue: row[targetColumn.prop],
     //正则 不能为空字符
     inputPattern: /.+/,
-    inputErrorMessage: `${property} must not be empty.`
+    inputErrorMessage: `${property} must not be empty.`,
+    draggable: true,
+  }).catch(() => {
   })
+
+  if (!action) {
+    return
+  }
 
   row[property] = action.value
   let response = await Net.put(`/${props.model}/${row[props.modelKey]}`, row)
@@ -324,30 +300,60 @@ async function handleCellDoubleClick(row, column) {
 }
 
 async function handleDeleteModel() {
+  let refer = currentSelection.value.length > 0
+      ? `these ${currentSelection.value.length}`
+      : 'this'
   let action = await ElMessageBox.confirm(
-      'Are you sure delete it?', "Warning", {
+      `Are you sure delete ${refer} ${getNounLowercased()}(s)?`, "Warning", {
         confirmButtonText: "Delete",
         cancelButtonText: "Cancel",
         type: "warning",
+        draggable: true,
       }
-  )
-
-  if (action === "cancel") {
-    return
-  }
-
-  let selectedModelNumbers = currentSelection.value
-      //x为 currentSelection中每个对象
-      .map((x) => x[props.modelKey])
-      .join(",")   //数组.join()分割为字符串加逗号
-
-  Net.delete(`/${props.model}/${selectedModelNumbers}`).then(response => {
-    ElMessage({
-      message: response.data.message,
-      type: response.data['success'] ? 'success' : 'error'
-    })
-    reloadTableData()
+  ).catch(() => {
   })
+
+  if (action === "confirm") {
+    let selectedModelNumbers = currentSelection.value
+        .map((x) => x[props.modelKey])
+        .join(",")
+
+    Net.delete(`/${props.model}/${selectedModelNumbers}`)
+        .then((res) => {
+          ElMessage({
+            message: res.data.message,
+            type: res.data['success'] ? 'success' : 'error'
+          })
+        })
+        .catch(() => {
+          ElMessageBox({
+            title: 'Foreign Key Constraint Failed',
+            message: `These ${getNounLowercased()}(s) are still required in somewhere else. We can't delete them right now.`,
+            type: 'error',
+            draggable: true,
+          })
+        })
+        .finally(() => {
+          reloadTableData()
+        })
+  }
+}
+
+function getNounLowercased() {
+  return props.noun.toLowerCase()
+}
+
+function handleApplyFilter() {
+  reloadTableData()
+}
+
+async function handleCreateModel() {
+  let response = await Net.post(`/${props.model}`, createForm)
+  ElMessage({
+    message: response.data.message,
+    type: response.data['success'] ? 'success' : 'error'
+  })
+  await reloadTableData()
 }
 
 onMounted(reloadTableData)

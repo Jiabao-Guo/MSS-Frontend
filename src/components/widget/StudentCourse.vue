@@ -1,11 +1,4 @@
 <template>
-  <GenericTable
-      model="instructor"
-      noun="Instructor"
-      model-key="instructorNumber"
-      :columns="columns"
-      :query-form="queryForm"
-  />
   <el-table :data="tableData" stripe style="margin-bottom: 8px;"
             @selection-change="handleSelectionChange"
             v-loading="loading">
@@ -24,48 +17,11 @@
 
 <script>
 import {ElMessage} from "element-plus";
-import GenericTable from "@/components/generic/GenericTable.vue";
 import Net from "@/components/util/network";
 
 export default {
-  components: {GenericTable},
   data() {
     return {
-      columns: [
-        {
-          prop: 'instructorNumber',
-          form: {
-            dataType: 'number',
-          },
-          label: 'Instructor Number',
-          width: '180',
-          rules: []
-        },
-        {
-          prop: 'name',
-          form: {
-            dataType: 'string',
-          },
-          label: 'Instructor Name',
-          rules: []
-        },
-        {
-          prop: 'salary',
-          form: {
-            dataType: 'number-range',
-            minKey: 'min',
-            maxKey: 'max',
-            min: -9999999999,
-            max: 9999999999,
-          },
-          label: 'Salary',
-          width: '180',
-          rules: []
-        },
-      ],
-      queryForm: {
-        min: 0.0, max: 100000.0, name: 'a'
-      },
       tableData: [
         {
           //新数据更新完  会替换掉初始值
@@ -92,10 +48,7 @@ export default {
     // selection: array of courses
     handleSelectionChange(selection) {
       this.currentSelection = selection
-
-
     },
-
     handleRegister() {
       //post  8080  传到后端
       Net.post('/course-registration', {
@@ -117,10 +70,7 @@ export default {
           //type:type
         })
       })
-
-
     }
-
   }
 }
 </script>

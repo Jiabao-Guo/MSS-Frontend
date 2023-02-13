@@ -90,8 +90,16 @@ import isDebug from "./config";
                 <span>System Administration</span>
               </template>
 
-              <el-menu-item index="professor-information">
+              <el-menu-item index="course-management">
+                <template #title>Course Management</template>
+              </el-menu-item>
+
+              <el-menu-item index="instructor-management">
                 <template #title>Instructor Management</template>
+              </el-menu-item>
+
+              <el-menu-item index="instructor-management-legacy">
+                <template #title>Instructor Management (Legacy)</template>
               </el-menu-item>
 
             </el-sub-menu>

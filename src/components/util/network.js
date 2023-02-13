@@ -16,18 +16,22 @@ export default class Net {
         request_string = request_string.substring(
             0, request_string.length - 1)
 
+        console.log(`NET - GET ${url}?${request_string}`)
         return axios.get(`${url}?${request_string}`)
     }
 
     static post(url, data) {
+        console.log(`NET - POST ${url} (${data})`)
         return axios.post(url, data)
     }
 
     static put(url, data) {
+        console.log(`NET - PUT ${url} (${data})`)
         return axios.put(url, data)
     }
 
     static delete(url, data) {
+        console.log(`NET - DELETE ${url} (${data})`)
         return axios.delete(url, data)
     }
 }

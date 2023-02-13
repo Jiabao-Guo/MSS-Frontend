@@ -8,7 +8,7 @@ import LoginPage from '@/components/LoginPage.vue'
 import MainPage from "@/components/MainPage.vue"
 import App from "@/App.vue"
 
-import { createRouter, createWebHistory } from 'vue-router'
+import {createRouter, createWebHistory} from 'vue-router'
 
 import StudentRegistrationPage from "@/components/widget/StudentRegistrationPage.vue"
 import StudentMainPage from "@/components/widget/StudentMainPage.vue"
@@ -16,24 +16,26 @@ import StudentSchedule from "@/components/widget/StudentSchedule.vue"
 import StudentCourse from "@/components/widget/StudentCourse.vue"
 import StudentGrade from "@/components/widget/StudentGrade.vue"
 import StudentRate from "@/components/widget/StudentRate.vue"
-import ProfessorInformation from "@/components/widget/InstructorManagement.vue"
+import LegacyInstructorManagement from "@/components/widget/LegacyInstructorManagement.vue"
 import RateForm from "@/components/widget/RateForm.vue"
 import McpApplication from "@/components/widget/StudentMcpApplication.vue"
 import {useDark} from "@vueuse/core";
 import Net from "@/components/util/network";
+import InstructorManagement from "@/components/widget/InstructorManagement.vue";
+import CourseManagement from "@/components/widget/CourseManagement.vue";
 
 let mixin = {
     methods: {
-        globalSetDarkMode: function(dark) {
+        globalSetDarkMode: function (dark) {
             ref(useDark()).value = !!dark
             localStorage.setItem('dark', !!dark ? 'true' : 'false')
         },
-        globalToggleDarkMode: function() {
+        globalToggleDarkMode: function () {
             let current = ref(useDark()).value
             ref(useDark()).value = !current
             localStorage.setItem('dark', !current ? 'true' : 'false')
         },
-        globalInitForDarkMode: function() {
+        globalInitForDarkMode: function () {
             let dark = localStorage.getItem('dark')
             this.globalSetDarkMode(dark === 'true')
         }
@@ -72,19 +74,27 @@ let router = createRouter({
                     component: StudentSchedule,
                 },
                 {
-                    path:'/rate',
+                    path: '/rate',
                     component: StudentRate,
                 },
                 {
-                    path:'/professor-information',
-                    component: ProfessorInformation,
+                    path: '/instructor-management-legacy',
+                    component: LegacyInstructorManagement,
                 },
                 {
-                    path:'/rate-form',
+                    path: '/instructor-management',
+                    component: InstructorManagement,
+                },
+                {
+                    path: '/course-management',
+                    component: CourseManagement,
+                },
+                {
+                    path: '/rate-form',
                     component: RateForm,
                 },
                 {
-                    path:'/mcp-application',
+                    path: '/mcp-application',
                     component: McpApplication,
                 },
             ]
