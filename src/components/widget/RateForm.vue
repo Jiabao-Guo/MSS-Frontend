@@ -123,7 +123,7 @@
 </template>
 
 <script>
-import axios from "axios";
+import Net from "@/components/util/network";
 
 export default {
   data() {
@@ -177,13 +177,13 @@ export default {
         if (isValid) {
           console.log(this.form)
           //post投递到后端
-          axios.post('http://localhost:8080/professor-evaluation', {
+          Net.post('/professor-evaluation', {
             ...this.form,
             studentNumber: localStorage.getItem("student_number"),
             sessionId: localStorage.getItem("session"),
           })
               .then(res => {
-                alert(res.data.messages)
+                alert(res.data.message)
               })
         }
       });
@@ -203,7 +203,7 @@ export default {
 
       // 正式进行搜索，也就是进行网络请求
       // 把用户输入的内容，传给后端的InstructorController
-      axios.get('http://localhost:8080/instructor/'+inputName,)
+      Net.get('/instructor/by-name/'+inputName,)
           .then(res => {
             // 执行到then里面的内容的时候，说明服务器给了回应了
             // 其中res就包含着回应的内容

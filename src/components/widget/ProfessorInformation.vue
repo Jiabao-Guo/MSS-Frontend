@@ -22,7 +22,7 @@
     </el-form-item>
 
     <el-form-item>
-      <el-button text @click="handleAddInstructor">
+      <el-button @click="handleAddInstructor">
         Add Instructor
       </el-button>
     </el-form-item>
@@ -102,8 +102,8 @@
 
 
 <script>
-import axios from "axios";
 import {ElMessage, ElMessageBox} from "element-plus";
+import Net from "@/components/util/network";
 export default {
   data() {
     return {
@@ -204,11 +204,11 @@ export default {
             //使用更改的value 去更新 老的row
             row[property] = value
             // 用户点了OK之后，会自动执行.then里面的代码
-            axios.put(`http://localhost:8080/instructor/${row.instructorNumber}`,row).then(response => {
+            Net.put(`/instructor/${row.instructorNumber}`,row).then(response => {
               // 根据后端ResponseEntity<InstructorModifyResponse> modifyInstructor() 的参数
                 ElMessage({
-                  message: response.data.messages,
-                  type: response.data.isSuccess ? 'success' : 'error'
+                  message: response.data.message,
+                  type: response.data.success ? 'success' : 'error'
                 })
               this.handleQuery()
             })
@@ -244,7 +244,7 @@ export default {
     private String name;
        */
 
-      axios.post("http://localhost:8080/instructor/query", {
+      Net.get("/instructor", {
         page: this.currentPage - 1,
         amount: this.pageSize,
         min:minResult,
@@ -284,11 +284,11 @@ export default {
             .map((x) => x.instructorNumber)
             .join(",")   //数组.join()分割为字符串加逗号
 
-        axios.delete(`http://localhost:8080/instructor/${instructorNumbers1}`).then(response => {
+        Net.delete(`/instructor/${instructorNumbers1}`).then(response => {
           // 根据后端ResponseEntity<InstructorModifyResponse> modifyInstructor() 的参数
           ElMessage({
-            message: response.data.messages,
-            type: response.data.isSuccess ? 'success' : 'error'
+            message: response.data.message,
+            type: response.data.success ? 'success' : 'error'
           })
           this.handleQuery()
         })
@@ -306,7 +306,7 @@ export default {
        // return instructorRepository.findAll(pageable);
      // }
 
-      axios.get(`http://localhost:8080/instructor?page=${this.currentPage-1}&amount=${this.pageSize}`)
+      Net.get(`/instructor?page=${this.currentPage-1}&amount=${this.pageSize}`)
           .then(response => {
             //可以将需要的 字段 全部打印出来..通过打印 可以知道从后端取出了哪些字段,例如:content和totalElements
             console.log(response)

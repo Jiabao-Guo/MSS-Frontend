@@ -6,26 +6,27 @@
       label-width="120px"
       class="demo-ruleForm"
       :size="formSize"
+      label-position="right"
       status-icon
   >
-    <el-form-item label="Student number" prop="studentNumber">
-      <el-input v-model="ruleForm.studentNumber" />
+    <el-form-item label="Student number" prop="studentNumber" label-width="150">
+      <el-input v-model="ruleForm.studentNumber"/>
     </el-form-item>
-    <el-form-item label="Marital status" prop="maritalStatus">
+    <el-form-item label="Marital status" prop="maritalStatus" label-width="150">
       <el-select v-model="ruleForm.maritalStatus" placeholder="Marital status">
-        <el-option label="Single" value="Single" />
-        <el-option label="Married" value="Married" />
-        <el-option label="Divouced" value="Divouced" />
+        <el-option label="Single" value="Single"/>
+        <el-option label="Married" value="Married"/>
+        <el-option label="Divouced" value="Divouced"/>
       </el-select>
     </el-form-item>
-<!--    <el-form-item label="Intending to reside in Canada" prop="count">-->
-<!--      <el-select-v2-->
-<!--          v-model="ruleForm.count"-->
-<!--          placeholder="Intending to reside in Canada"-->
-<!--          :options="options"-->
-<!--      />-->
-<!--    </el-form-item>-->
-    <el-form-item label="Application time" required>
+    <!--    <el-form-item label="Intending to reside in Canada" prop="count">-->
+    <!--      <el-select-v2-->
+    <!--          v-model="ruleForm.count"-->
+    <!--          placeholder="Intending to reside in Canada"-->
+    <!--          :options="options"-->
+    <!--      />-->
+    <!--    </el-form-item>-->
+    <el-form-item label="Application time" required label-width="150">
       <el-col :span="11">
         <el-form-item prop="applicationTime">
           <el-date-picker
@@ -39,20 +40,20 @@
       </el-col>
     </el-form-item>
 
-    <el-form-item label="Delivery Card" prop="delivery">
-      <el-switch v-model="ruleForm.delivery" />
+    <el-form-item label="Delivery Card" prop="delivery" label-width="150">
+      <el-switch v-model="ruleForm.delivery"/>
     </el-form-item>
 
-    <el-form-item label="Identity type" prop="identityType">
+    <el-form-item label="Identity type" prop="identityType" label-width="150">
       <el-radio-group v-model="ruleForm.identityType">
-        <el-radio label="Citizens" />
-        <el-radio label="International Students" />
-        <el-radio label="Homeless" />
+        <el-radio label="Citizens"/>
+        <el-radio label="International Students"/>
+        <el-radio label="Homeless"/>
       </el-radio-group>
     </el-form-item>
 
-    <el-form-item label="Reason to Canada" prop="reason">
-      <el-input v-model="ruleForm.reason" type="textarea" />
+    <el-form-item label="Reason to Canada" prop="reason" label-width="150">
+      <el-input v-model="ruleForm.reason" type="textarea"/>
     </el-form-item>
 
     <el-form-item>
@@ -63,17 +64,17 @@
 </template>
 
 <script>
-import axios from "axios";
+import Net from "@/components/util/network";
 
 export default {
-  data(){
-    return{
-      formObject:null,
-      size:'default',
-      formSize:'default',
-      loading:false,
+  data() {
+    return {
+      formObject: null,
+      size: 'default',
+      formSize: 'default',
+      loading: false,
 
-      ruleForm:{
+      ruleForm: {
         studentNumber: '',
         maritalStatus: '',
         applicationTime: '',
@@ -82,11 +83,11 @@ export default {
         reason: '',
       },
 
-      rules:{
+      rules: {
 
         studentNumber: [
-          { required: true, message: 'Please input studentNumber', trigger: 'blur' },
-          { min: 3, max: 10, message: 'Length should be 3 to 5', trigger: 'blur' },
+          {required: true, message: 'Please input studentNumber', trigger: 'blur'},
+          {min: 3, max: 10, message: 'Length should be 3 to 5', trigger: 'blur'},
         ],
         maritalStatus: [
           {
@@ -114,7 +115,7 @@ export default {
         ],
 
         reason: [
-          { required: true, message: 'Please input reason', trigger: 'blur' },
+          {required: true, message: 'Please input reason', trigger: 'blur'},
         ],
 
       }
@@ -124,7 +125,7 @@ export default {
   mounted() {
   },
 
-  methods:{
+  methods: {
     submitForm() {
       this.$refs.formInstance.validate((isValid) => {
         // 到这时，validation已经完成
@@ -133,17 +134,20 @@ export default {
         if (isValid) {
           console.log(this.ruleForm)
           //post投递到后端
-          axios.post('http://localhost:8080/mcp-application', {
+          Net.post('/mcp-application', {
             ...this.ruleForm,
             studentNumber: localStorage.getItem("student_number"),
             sessionId: localStorage.getItem("session"),
           })
               .then(res => {
-                alert(res.data.messages)
+                alert(res.data.message)
               })
         }
       });
     },
+    resetForm() {
+      this.$refs.formInstance.resetFields();
+    }
   }
 }
 

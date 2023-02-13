@@ -3,7 +3,7 @@ import './assets/main.scss'
 
 import ElementPlus from "element-plus"
 
-import { createApp } from 'vue'
+import {createApp, ref} from 'vue'
 import LoginPage from '@/components/LoginPage.vue'
 import MainPage from "@/components/MainPage.vue"
 import App from "@/App.vue"
@@ -18,7 +18,27 @@ import StudentGrade from "@/components/widget/StudentGrade.vue"
 import StudentRate from "@/components/widget/StudentRate.vue"
 import ProfessorInformation from "@/components/widget/ProfessorInformation.vue"
 import RateForm from "@/components/widget/RateForm.vue"
-import McpApplication from "@/components/widget/McpApplication.vue"
+import McpApplication from "@/components/widget/StudentMcpApplication.vue"
+import {useDark} from "@vueuse/core";
+import Net from "@/components/util/network";
+
+let mixin = {
+    methods: {
+        globalSetDarkMode: function(dark) {
+            ref(useDark()).value = !!dark
+            localStorage.setItem('dark', !!dark ? 'true' : 'false')
+        },
+        globalToggleDarkMode: function() {
+            let current = ref(useDark()).value
+            ref(useDark()).value = !current
+            localStorage.setItem('dark', !current ? 'true' : 'false')
+        },
+        globalInitForDarkMode: function() {
+            let dark = localStorage.getItem('dark')
+            this.globalSetDarkMode(dark === 'true')
+        }
+    }
+}
 
 let router = createRouter({
     history: createWebHistory(),
@@ -72,7 +92,10 @@ let router = createRouter({
     ]
 })
 
+Net.init()
+
 createApp(App)
+    .mixin(mixin)
     .use(router)
     .use(ElementPlus)
     .mount('#app')
