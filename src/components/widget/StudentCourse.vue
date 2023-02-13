@@ -3,14 +3,8 @@
       model="instructor"
       noun="Instructor"
       model-key="instructorNumber"
-      :columns="[
-        {prop: 'instructorNumber', label: 'Instructor Number', width: '180', rules: []},
-        {prop: 'name', label: 'Instructor Name', rules: []},
-        {prop: 'salary', label: 'Salary', width: '180', rules: []},
-      ]"
-      :query-form="{
-        min: 0.0, max: 100000.0, name: 'a'
-      }"
+      :columns="columns"
+      :query-form="queryForm"
   />
   <el-table :data="tableData" stripe style="margin-bottom: 8px;"
             @selection-change="handleSelectionChange"
@@ -37,6 +31,41 @@ export default {
   components: {GenericTable},
   data() {
     return {
+      columns: [
+        {
+          prop: 'instructorNumber',
+          form: {
+            dataType: 'number',
+          },
+          label: 'Instructor Number',
+          width: '180',
+          rules: []
+        },
+        {
+          prop: 'name',
+          form: {
+            dataType: 'string',
+          },
+          label: 'Instructor Name',
+          rules: []
+        },
+        {
+          prop: 'salary',
+          form: {
+            dataType: 'number-range',
+            minKey: 'min',
+            maxKey: 'max',
+            min: -9999999999,
+            max: 9999999999,
+          },
+          label: 'Salary',
+          width: '180',
+          rules: []
+        },
+      ],
+      queryForm: {
+        min: 0.0, max: 100000.0, name: 'a'
+      },
       tableData: [
         {
           //新数据更新完  会替换掉初始值
@@ -53,11 +82,7 @@ export default {
   },
   mounted() {
     //每次页面更新 从后端取出数据放到前段
-    Net.post('/course', {
-      studentNumber: localStorage.getItem("student_number"),
-      sessionId: localStorage.getItem("session"),
-
-    }).then(res => {
+    Net.get('/course').then(res => {
       // 这个时候res.data是接收到的数据
       this.tableData = res.data
     })

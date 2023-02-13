@@ -5,9 +5,9 @@
   <el-card>
     <h3>Pagination Control</h3>
 
-    <el-form inline>
+    <el-form inline size="small">
       <el-form-item label="Size">
-        <el-radio-group v-model="small" size="small">
+        <el-radio-group v-model="small">
           <el-radio-button :label="false">Medium</el-radio-button>
           <el-radio-button :label="true">Small</el-radio-button>
         </el-radio-group>
@@ -22,11 +22,97 @@
       </el-form-item>
     </el-form>
 
-    <h3>Management & Filters</h3>
+    <el-divider direction="horizontal"/>
+
+    <h3>Filters & Management</h3>
+
+
+    <el-form inline size="small">
+      <el-form-item
+          v-for="c in columns"
+          :key="c.prop"
+          :prop="c.prop"
+          :label="c.label"
+      >
+        <div v-if="c.form.dataType === 'string'">
+          <el-input
+              v-model="form[c.prop]"
+              autocomplete="off"
+              :placeholder="c.label"
+          />
+        </div>
+
+        <div v-else-if="c.form.dataType === 'number'">
+          <el-input
+              v-model="form[c.prop]"
+              :placeholder="c.label"
+          />
+        </div>
+
+        <div v-else-if="c.form.dataType === 'number-range'">
+          <el-row>
+            <el-col :span="6">
+              <el-input
+                  v-model="form[c.form.minKey]"
+                  placeholder="Min"
+              />
+            </el-col>
+            <div style="margin: 0 4px">~</div>
+            <el-col :span="6">
+              <el-input
+                  v-model="form[c.form.maxKey]"
+                  placeholder="Max"
+              />
+            </el-col>
+          </el-row>
+        </div>
+
+        <div v-else-if="c.form.dataType === 'datetime'">
+          <el-date-picker
+              v-model="form[c.prop]"
+              type="date"
+              placeholder="Select date"
+          />
+        </div>
+
+        <div v-else-if="c.form.dataType === 'select'">
+          <el-select v-model="form[c.prop]" placeholder="Select One">
+            <el-option
+                v-for="option in c.form.options"
+                :key="option.value"
+                :label="option.label"
+                :value="option.value"
+            />
+          </el-select>
+        </div>
+
+        <div v-else-if="c.form.dataType === 'switch'">
+          <el-switch v-model="form[c.prop]"/>
+        </div>
+
+        <div v-else>
+          Error type: {{ c.form.dataType }}
+        </div>
+      </el-form-item>
+
+      <slot name="filter"/>
+    </el-form>
+
+    <el-button type="success" size="default">
+      <el-icon><Check/></el-icon>&nbsp;
+      Apply Filter
+    </el-button>
+
+    <!--------------------------------------------------------
+    Divider
+    -------------------------------------------------------->
+    <el-divider direction="horizontal"/>
+
     <el-button
         type="primary"
         @click="handleAddModel"
     >
+      <el-icon><Plus/></el-icon>&nbsp;
       Add {{ noun }}
     </el-button>
 
@@ -36,9 +122,11 @@
         v-if="currentSelection.length > 0"
         :disabled="currentSelection.length === 0"
     >
+      <el-icon><Close/></el-icon>&nbsp;
       Delete {{ noun }}
     </el-button>
-    <slot name="filter"/>
+
+    <slot name="management"/>
   </el-card>
 
   <!--------------------------------------------------------
@@ -93,21 +181,15 @@
       width="450px"
       draggable
   >
-    <el-form :model="form" :rules="rules">
-      <el-form-item
-          v-for="column in columns"
-          :key="column.prop"
-          :prop="column.prop"
-          :label="column.label"
-      >
-        <el-input v-model="form[column.prop]" autocomplete="off" />
-      </el-form-item>
+    <el-form :model="form" :rules="rules" label-width="150px">
+
     </el-form>
 
     <template #footer>
       <span class="dialog-footer">
         <el-button @click="shouldShowAddingDialog = false">Cancel</el-button>
         <el-button type="primary" @click="handleConfirmAddingModel">
+          <el-icon><Check/></el-icon>&nbsp;
           Create {{ noun }}
         </el-button>
       </span>
@@ -122,6 +204,14 @@ columns: [
     prop: String,
     label: String,
     width: number,
+    form: {
+      dataType: 'string' | 'number' | 'number-range' | 'datetime' | 'select' | 'switch',
+      {{
+        options?: {label: String, value: String}[],
+        min?: number,
+        max?: number,
+      }}
+    },
     rules: [
       {
         required: boolean,
@@ -135,6 +225,10 @@ columns: [
 import {onMounted, reactive, ref} from "vue";
 import {ElMessage, ElMessageBox} from "element-plus";
 import Net from "@/components/util/network";
+import {
+  Check, Checked, CircleCheck,
+    Plus, Close
+} from '@element-plus/icons-vue'
 
 const props = defineProps({
   model: String,
