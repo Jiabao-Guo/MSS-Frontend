@@ -1,11 +1,11 @@
 <template>
-在这里写成绩grade
+  Grade: {{ grade }}
 </template>
 
-<script>
-export default {
-  name: "StudentGrade"
-}
+<script setup>
+import {ref} from "vue";
+
+let grade = ref(100)
 </script>
 
 <style scoped>

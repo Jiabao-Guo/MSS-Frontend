@@ -18,6 +18,7 @@
             v-model="targetForm[getProp(c)]"
             :placeholder="c.label"
             clearable
+            @keydown.enter="$emit('apply-filter')"
         />
       </div>
 
@@ -26,6 +27,7 @@
             v-model="targetForm[getProp(c)]"
             :placeholder="c.label"
             clearable
+            @keydown.enter="$emit('apply-filter')"
         />
       </div>
 
@@ -36,6 +38,7 @@
                 v-model="targetForm[c.filterForm.minKey]"
                 placeholder="Min"
                 clearable
+                @keydown.enter="$emit('apply-filter')"
             />
           </el-col>
           <div style="margin: 0 4px">~</div>
@@ -44,6 +47,7 @@
                 v-model="targetForm[c.filterForm.maxKey]"
                 placeholder="Max"
                 clearable
+                @keydown.enter="$emit('apply-filter')"
             />
           </el-col>
         </el-row>
@@ -52,6 +56,7 @@
             v-model="targetForm[getProp(c)]"
             :placeholder="c.label"
             clearable
+            @keydown.enter="$emit('apply-filter')"
         />
       </div>
 
@@ -108,6 +113,8 @@ defineProps({
     required: false
   },
 })
+
+defineEmits(['apply-filter'])
 
 function getProp(c) {
   return (c.alias || {})[c.prop] || c.prop

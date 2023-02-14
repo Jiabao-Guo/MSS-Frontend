@@ -10,7 +10,6 @@ import App from "@/App.vue"
 
 import {createRouter, createWebHistory} from 'vue-router'
 
-import StudentRegistrationPage from "@/components/widget/StudentRegistrationPage.vue"
 import StudentMainPage from "@/components/widget/StudentMainPage.vue"
 import StudentSchedule from "@/components/widget/StudentSchedule.vue"
 import StudentCourse from "@/components/widget/StudentCourse.vue"
@@ -24,24 +23,6 @@ import Net from "@/components/util/network";
 import InstructorManagement from "@/components/widget/InstructorManagement.vue";
 import CourseManagement from "@/components/widget/CourseManagement.vue";
 
-let mixin = {
-    methods: {
-        globalSetDarkMode: function (dark) {
-            ref(useDark()).value = !!dark
-            localStorage.setItem('dark', !!dark ? 'true' : 'false')
-        },
-        globalToggleDarkMode: function () {
-            let current = ref(useDark()).value
-            ref(useDark()).value = !current
-            localStorage.setItem('dark', !current ? 'true' : 'false')
-        },
-        globalInitForDarkMode: function () {
-            let dark = localStorage.getItem('dark')
-            this.globalSetDarkMode(dark === 'true')
-        }
-    }
-}
-
 let router = createRouter({
     history: createWebHistory(),
     routes: [
@@ -50,16 +31,12 @@ let router = createRouter({
             component: LoginPage,
         },
         {
-            path: '/mainpage',
+            path: '/home',
             component: MainPage,
             children: [
                 {
                     path: '/main',
                     component: StudentMainPage
-                },
-                {
-                    path: '/registration',
-                    component: StudentRegistrationPage
                 },
                 {
                     path: '/course',
@@ -105,7 +82,6 @@ let router = createRouter({
 Net.init()
 
 createApp(App)
-    .mixin(mixin)
     .use(router)
     .use(ElementPlus)
     .mount('#app')

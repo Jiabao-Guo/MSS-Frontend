@@ -1,10 +1,3 @@
-<!-- 导入图标 -->
-<script setup>
-import {
-  Moon
-} from '@element-plus/icons-vue'
-</script>
-
 <template>
   <div>
     <div class="bg">
@@ -55,77 +48,85 @@ import {
         </p>
       </div>
 
-      <el-button class="button-toggle-dark" @click="this.globalToggleDarkMode">
-        <el-icon><Moon/></el-icon>
+      <el-button class="button-toggle-dark" @click="useGlobalToggleDarkMode()()">
+        <el-icon>
+          <Moon/>
+        </el-icon>
       </el-button>
     </el-container>
   </div>
 </template>
 
-<script>
-import {ElMessage} from "element-plus";
-import {sha256} from "js-sha256";
-import Net from "@/components/util/network";
+<script setup>
+import {
+  Moon
+} from '@element-plus/icons-vue'
+import {ElMessage} from "element-plus"
+import {sha256} from "js-sha256"
+import Net from "@/components/util/network"
+import {onMounted, ref} from "vue"
+import {useGlobalInitForDarkMode, useGlobalToggleDarkMode} from "@/components/util/global"
+import {useRouter} from "vue-router";
 
-export default {
-  data() {
-    return {
-      username: '',
-      password: '',
-      isStudentLogin: true,
-      loading: false,
-    }
-  },
-  mounted() {
-    this.globalInitForDarkMode()
-  },
-  methods: {
-    onLogin() {
-      this.loading = true
-      Net.post('/login', {
-        /**
-         * 后端loginEntity 根据以下三个属性编写
-         * */
-        number: this.username,
-        passwordSha256: sha256(this.password),
-        isStudentLogin: this.isStudentLogin
-      }).then(res => {
+const router = useRouter()
 
-        /** 将前端方法返回的结果 全部存入 res.data 并且用 response接收*/
-        let response = res.data
+const username = ref('')
+const password = ref('')
+const isStudentLogin = ref(true)
+const loading = ref(false)
 
-        if (!response.success) {
-          ElMessage({
-            message: response.message,
-            type: 'error'
-          })
-          return
-        }
-        ElMessage({
-          message: response.message,
-          type: 'success'
-        })
-
-        /**  用过response.sessionId 拿到后端设置的值(手环)
-         *   二次加密
-         */
-        localStorage.setItem("session", response.sessionId)
-        localStorage.setItem("student_number", this.username)
-
-        this.$router.push('/mainpage')
-
-      }).finally(() => {
-        setTimeout(() => {
-          this.loading = false
-        }, 1000);
-      })
-    }
-  }
+function mounted() {
+  useGlobalInitForDarkMode()()
 }
 
+function onLogin() {
+  loading.value = true
+  Net.post('/login', {
+    /**
+     * 后端loginEntity 根据以下三个属性编写
+     * */
+    number: username.value,
+    passwordSha256: sha256(password.value),
+    isStudentLogin: isStudentLogin.value
+  }).then(res => {
+
+    /** 将前端方法返回的结果 全部存入 res.data 并且用 response接收*/
+    let response = res.data
+
+    if (!response.success) {
+      ElMessage({
+        message: response.message,
+        type: 'error'
+      })
+      return
+    }
+    ElMessage({
+      message: response.message,
+      type: 'success'
+    })
+
+    /**  用过response.sessionId 拿到后端设置的值(手环)
+     *   二次加密
+     */
+    localStorage.setItem("session", response.sessionId)
+    localStorage.setItem("student_number", username.value)
+
+    Net.init()
+
+    setTimeout(() => {
+      router.push('/home')
+    }, 500)
+
+  }).finally(() => {
+    setTimeout(() => {
+      loading.value = false
+    }, 1000);
+  })
+}
+
+onMounted(mounted)
+
 </script>
-
-
 
 <style lang="scss" scoped>
 @import "src/assets/main";

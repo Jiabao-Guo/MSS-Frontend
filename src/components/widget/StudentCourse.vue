@@ -1,78 +1,211 @@
 <template>
-  <el-table :data="tableData" stripe style="margin-bottom: 8px;"
-            @selection-change="handleSelectionChange"
-            v-loading="loading">
-    <el-table-column type="selection" width="55"/>
-    <el-table-column prop="courseNumber" label="Course Number" width="180"/>
-    <el-table-column prop="name" label="Course Name" width="180"/>
-    <el-table-column prop="instructor.name" label="Instructor Name"/>
-  </el-table>
+  <GenericTable
+      model="course"
+      noun="Course"
+      model-key="id"
+      :columns="columns"
+      view-only
+      disable-pagination-control
+      @selection-updated="handleSelectionUpdated"
+  >
+    <template #header>
+      <h3>My Courses</h3>
+      <el-table
+          :data="myCourses"
+      >
+        <template #empty>
+          You have not registered any courses yet.
+        </template>
 
-  <el-form-item>
-    <el-button type="primary" @click="handleRegister">Register Selected</el-button>
-    <el-button>Cancel</el-button>
-  </el-form-item>
+        <el-table-column
+            prop="course.courseNumber"
+            label="Course Number"
+        />
+        <el-table-column
+            prop="course.name"
+            label="Name"
+        />
+        <el-table-column
+            prop="courseRegistrationTime"
+            label="Registered At"
+        >
+          <template #default="{row}">
+            {{ new Date(row.courseRegistrationTime).toLocaleString() }}
+          </template>
+        </el-table-column>
+        <el-table-column
+            label="Operation"
+        >
+          <template #default="{row}">
+            <el-button
+                @click="handleDrop(row)"
+                type="danger" size="small">
+              Drop
+            </el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+    </template>
 
+    <template #management>
+      <el-divider direction="horizontal"/>
+
+      <el-button
+          @click="handleRegister"
+          type="primary" v-if="selection.length > 0"
+      >
+        Register {{ selection.length }} Course(s)
+      </el-button>
+    </template>
+  </GenericTable>
 </template>
 
-<script>
-import {ElMessage} from "element-plus";
+<script setup>
+import {onMounted, reactive, ref} from "vue";
+import GenericTable from "@/components/generic/GenericTable.vue";
 import Net from "@/components/util/network";
+import {ElMessage, ElMessageBox} from "element-plus";
 
-export default {
-  data() {
-    return {
-      tableData: [
-        {
-          //新数据更新完  会替换掉初始值
-          courseNumber: '9877',
-          name: 'example data',
-          instructor: {
-            name: 'x'
-          }
-        },
-      ],
-      currentSelection: [],
-      loading: false
-    }
-  },
-  mounted() {
-    //每次页面更新 从后端取出数据放到前段
-    Net.get('/course').then(res => {
-      // 这个时候res.data是接收到的数据
-      this.tableData = res.data
-    })
-  },
+const selection = ref([])
+const myCourses = ref([])
 
-  methods: {
-    // selection: array of courses
-    handleSelectionChange(selection) {
-      this.currentSelection = selection
+const columns = reactive([
+  {
+    prop: 'courseNumber',
+    label: 'Course Number',
+    dataType: 'number',
+    asInsert: true,
+    asFilter: true,
+    modifiable: true,
+    createForm: {
+      rules: []
     },
-    handleRegister() {
-      //post  8080  传到后端
-      Net.post('/course-registration', {
-        studentNumber: localStorage.getItem("student_number"),
-        sessionId: localStorage.getItem("session"),
-
-        //此数组课程 传到后端
-        selectCourse: this.currentSelection
-        //res => 后端的CourseRegistrationResponse
-      }).then(res => {
-        // let type = 'success';
-        // if (!res.data.success) {
-        //   type = 'error';
-        // }
-
-        ElMessage({
-          message: res.data.message,
-          type: res.data.success ? 'success' : 'error'
-          //type:type
-        })
-      })
+    filterForm: {
+      defaultValues: {
+        courseNumber: ''
+      }
     }
-  }
+  },
+  {
+    prop: 'name',
+    label: 'Name',
+    dataType: 'string',
+    width: '',
+    asInsert: true,
+    asFilter: true,
+    modifiable: true,
+    createForm: {
+      rules: []
+    },
+    filterForm: {
+      defaultValues: {
+        name: ''
+      },
+    },
+  },
+  {
+    prop: 'instructorByInstructorNumber.name',
+    label: 'Taught By',
+    dataType: 'string',
+    width: '',
+    asInsert: false,
+    asFilter: true,
+    modifiable: false,
+    createForm: {
+      rules: []
+    },
+    filterForm: {
+      defaultValues: {
+        'instructorByInstructorNumber.name': '',
+      },
+    },
+    alias: {
+      'instructorByInstructorNumber.name': 'instructorName'
+    }
+  },
+  {
+    prop: 'instructorByInstructorNumber.instructorNumber',
+    label: 'Instructor Number',
+    dataType: 'string',
+    width: '',
+    asInsert: true,
+    asFilter: false,
+    modifiable: true,
+    createForm: {},
+    filterForm: {},
+    alias: {
+      'instructorByInstructorNumber.instructorNumber': 'instructorNumber'
+    }
+  },
+])
+
+
+function handleSelectionUpdated(s) {
+  selection.value = s
 }
+
+async function reloadMyCourses() {
+  let id = localStorage.getItem('student_id')
+  let response = await Net.get(`/student/${id}/course-registration`)
+  myCourses.value = response.data || []
+}
+
+async function handleRegister() {
+  let action = await ElMessageBox.confirm(
+      'Are you sure to register these courses?', 'Confirm', {
+        confirmButtonText: 'Confirm',
+        cancelButtonText: 'Cancel',
+        type: 'warning'
+      }).catch(() => {
+  })
+
+  if (!action) {
+    return
+  }
+
+  let response = await Net.post('/course-registration', {
+    studentNumber: localStorage.getItem('student_number'),
+    courseNumbers: selection.value.map(it => it.courseNumber)
+  })
+  ElMessage({
+    message: response.data.message,
+    type: response.data.success ? 'success' : 'error'
+  })
+  await reloadMyCourses()
+}
+
+async function handleDrop(row) {
+  let registry = myCourses.value.find(it => it.courseNumber === row.courseNumber)
+  if (!registry) {
+    return
+  }
+  let span = '<span style="color: red; font-weight: bold">'
+  let spanEnd = '</span>'
+  let action = await ElMessageBox.confirm(
+      `Are you sure to ${span}DROP ${registry.course.name} (${row.courseNumber})${spanEnd}?`,
+      'Confirm', {
+        confirmButtonText: `Drop ${registry.course.name} (${row.courseNumber})`,
+        showCancelButton: false,
+        dangerouslyUseHTMLString: true,
+        type: 'warning'
+      }).catch(() => {
+  })
+
+  if (!action) {
+    return
+  }
+
+  let response = await Net.delete(`/course-registration/${registry.id}`)
+  ElMessage({
+    message: response.data.message,
+    type: response.data.success ? 'success' : 'error'
+  })
+  await reloadMyCourses()
+}
+
+onMounted(reloadMyCourses)
+
+
 </script>
 
 <style scoped>

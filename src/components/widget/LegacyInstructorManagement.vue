@@ -31,7 +31,7 @@
   <!-- 表格 -->
   <el-table :data="tableData"
             v-loading="loading"
-            stripe class="data-table"
+            stripe class="gt-data-table"
             @cell-dblclick="handleCellDoubleClick"
             @selection-change="handleSelectionChange">
 
@@ -60,7 +60,7 @@
   </div>
 
   <el-pagination
-      class="pager"
+      class="gt-pager"
       v-loading="loading"
       v-model:current-page="currentPage"
       v-model:page-size="pageSize"
@@ -335,7 +335,7 @@ export default {
 td {
   padding: 2px 8px;
 }
-.data-table {
+.gt-data-table {
   width: 100%;
   height: 500px;
   margin-bottom: 20px
