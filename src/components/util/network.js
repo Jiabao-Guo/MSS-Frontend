@@ -1,9 +1,12 @@
 import axios from "axios"
+import isDebug from "@/components/config";
 
 export default class Net {
 
     static init() {
-        axios.defaults.baseURL = 'http://localhost:8080/'
+        axios.defaults.baseURL = isDebug()
+            ? 'http://localhost:8080'
+            : 'https://mss-api.jiabao.world/'
         axios.defaults.headers.common['X-MSS-Session-Id'] = localStorage.getItem('session')
         axios.defaults.headers.common['X-MSS-Student-Number'] = localStorage.getItem('student_number')
     }

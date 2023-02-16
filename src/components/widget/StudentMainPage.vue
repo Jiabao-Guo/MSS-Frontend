@@ -9,8 +9,8 @@
 <script setup>
 function getImageSource(index) {
   return index % 2 === 0
-    ? 'http://mikutart.com/ha.jpg'
-    : 'http://mikutart.com/9.jpg'
+    ? 'https://mikutart.com/ha.jpg'
+    : 'https://mikutart.com/9.jpg'
 }
 </script>
 
