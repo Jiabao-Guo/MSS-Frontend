@@ -1,27 +1,10 @@
 <template>
-  <el-calendar ref="calendar">
-    <template #header="{ date }">
-      <span>My Schedule</span>
-      <span>{{ date }}</span>
-      <el-button-group>
-
-        <el-button size="small" @click="selectDate('prev-month')">
-          Previous Month
-        </el-button>
-        <el-button size="small" @click="selectDate('today')">
-          Today
-        </el-button>
-        <el-button size="small" @click="selectDate('next-month')">
-          Next Month
-        </el-button>
-
-      </el-button-group>
-    </template>
-
-    <template #date-cell="{ data }">
-      <div class="wrapper-div" @click="(e) => this.handleAddSchedule(e, data)">
-        <span class="span-date">{{ data.date.getDate() }}</span>
-        <span class="span-schedule">
+  <el-card class="card">
+    <el-calendar ref="calendar" class="calendar">
+      <template #date-cell="{ data }">
+        <div class="wrapper-div" @click="(e) => this.handleAddSchedule(e, data)">
+          <span class="span-date">{{ data.date.getDate() }}</span>
+          <span class="span-schedule">
           <el-popover
               v-for="(s, i) in (this.schedules[this.keyFromDate(data.date)] || [])"
               :key="i"
@@ -48,15 +31,16 @@
             </template>
           </el-popover>
         </span>
-      </div>
-    </template>
-  </el-calendar>
+        </div>
+      </template>
+    </el-calendar>
+  </el-card>
 </template>
 
 <script>
 
 import {ElMessage, ElMessageBox} from "element-plus";
-import axios from "axios";
+import Net from "@/components/util/network";
 
 export default {
   data() {
@@ -87,14 +71,15 @@ export default {
       return `${year}-${month}-${day}`
     },
     async reloadSchedule() {
-      let res = await axios.post('http://localhost:8080/schedule/query', {
+      let res = await Net.post('/schedule/query', {
         studentNumber: localStorage.getItem("student_number"),
         sessionId: localStorage.getItem("session"),
-      }).catch(() => {})
+      }).catch(() => {
+      })
 
-      if (!res.data.isSuccess) {
+      if (!res.data.success) {
         ElMessage.error({
-          message: res.data.messages,
+          message: res.data.message,
         })
         return
       }
@@ -110,11 +95,17 @@ export default {
     },
     async handleAddSchedule(event, data) {
       let date = this.keyFromDate(data.date);
-      console.log(data.date.getTime())
       let subject = await ElMessageBox.prompt(`What's your plan on ${date}?`, 'New Schedule', {
-        confirmButtonText: 'Create'
+        confirmButtonText: 'Create',
+        draggable: true,
       })
-          .catch(() => {})
+          .catch(() => {
+          })
+
+      if (!subject || subject.action !== 'confirm') {
+        return
+      }
+
       let addScheduleForm = {
         studentNumber: localStorage.getItem("student_number"),
         sessionId: localStorage.getItem("session"),
@@ -122,12 +113,12 @@ export default {
         subject: subject.value,
       }
 
-      let res = await axios.post('http://localhost:8080/schedule', addScheduleForm)
+      let res = await Net.post('/schedule', addScheduleForm)
       ElMessage({
-        type: res.data.isSuccess ? 'success' : 'error',
-        message: res.data.messages
+        type: res.data.success ? 'success' : 'error',
+        message: res.data.message
       })
-      this.reloadSchedule()
+      await this.reloadSchedule()
     },
     async handleUpdateSchedule(event, data, oldSchedule) {
       event.stopPropagation()
@@ -142,28 +133,32 @@ export default {
         inputPattern: /.+/,
         inputErrorMessage: 'Schedule must not be empty.',
         draggable: true,
-      }).then(  res => {
+      }).then(res => {
         let newSchedule = oldSchedule
         newSchedule.subject = res.value
-        axios.put(`http://localhost:8080/schedule/${oldSchedule.id}`, newSchedule).then(r => {
+        Net.put(`/schedule/${oldSchedule.id}`, newSchedule).then(r => {
           ElMessage({
-            type: r.data.isSuccess ? 'success' : 'error',
-            message: r.data.messages
+            type: r.data.success ? 'success' : 'error',
+            message: r.data.message
           })
           this.reloadSchedule()
-        }).catch(() => {})
+        }).catch(() => {
+        })
       }).catch((action) => {
         if (action === 'cancel') {
-          ElMessageBox.confirm('Are you sure to delete this?', 'Delete', { type: 'warning' }).then(() => {
-            axios.delete(`http://localhost:8080/schedule/${oldSchedule.id}`).then(r => {
+          ElMessageBox.confirm('Are you sure to delete this?', 'Delete', {
+            type: 'warning',
+            draggable: true,
+          }).then(() => {
+            Net.delete(`/schedule/${oldSchedule.id}`).then(r => {
               ElMessage({
-                type: r.data.isSuccess ? 'success' : 'error',
-                message: r.data.messages
+                type: r.data.success ? 'success' : 'error',
+                message: r.data.message
               })
               this.reloadSchedule()
             })
+          }).catch(() => {
           })
-
         }
       })
     },
@@ -205,16 +200,23 @@ span, el-tag {
   max-width: 100%;
   text-align: left;
   justify-content: left;
-  margin-top: 1px;
-  margin-left: 0;
-  margin-right: 0;
-  margin-bottom: 0;
+  margin: 1px 0 0;
   overflow: scroll;
   scrollbar-gutter: auto;
 }
 
 ::-webkit-scrollbar {
   display: none;
+}
+
+tbody {
+  border-radius: 12px;
+}
+
+.card {
+  border-radius: 12px;
+  border: 0;
+  box-shadow: black 0 0 !important;
 }
 
 </style>

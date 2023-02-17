@@ -1,13 +1,61 @@
 @use "sass:map";
 
+// Overrides colors in dark mode
+// Does not affect light mode
+@forward "element-plus/theme-chalk/src/common/var" with (
+  $colors: (
+    'primary': (
+     'base': rgb(5, 77, 167),
+    ),
+    'success': (
+     'base': rgb(0, 128, 0),
+    ),
+    'warning': (
+     'base': rgb(255, 165, 0),
+    ),
+    'danger': (
+     'base': rgb(171, 0, 0),
+    ),
+  ),
+);
 
+// Import this to get dark mode worked
 @import "element-plus/theme-chalk/src/dark/css-vars";
-$--el-color-primary: red;
 
-html,
-body {
+// Vue default
+html, body {
   padding: 0;
   margin: 0;
-  font-family: 'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB',
+  font-family: 'PingFang SC', Helvetica, 'Hiragino Sans GB',
   'Microsoft YaHei', '微软雅黑', Arial, sans-serif;
+}
+
+// Some variables
+$color-bright: rgb(232, 232, 232);
+$color-dark: rgb(18, 18, 18);
+$color-light-background: rgb(243, 243, 243);
+$color-light-background-dimmed: #F8F8F8;
+$color-dark-background: $color-dark;
+
+// Important: background colors in light mode
+// Does not affect dark mode
+:root {
+  // --el-fill-color-blank: $color-light-background-dimmed;
+  // --el-bg-color: $color-light-background-dimmed;
+}
+
+// Background colors in dark mode
+// Does not affect light mode
+html.dark, .dark body {
+  background: $color-dark;
+}
+
+// Background colors in light mode
+// Does not affect dark mode
+html, body {
+  background: $color-light-background;
+}
+
+el-message-box.dark {
+  border-radius: 12px;
 }

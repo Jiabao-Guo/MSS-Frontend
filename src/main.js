@@ -3,22 +3,25 @@ import './assets/main.scss'
 
 import ElementPlus from "element-plus"
 
-import { createApp } from 'vue'
+import {createApp, ref} from 'vue'
 import LoginPage from '@/components/LoginPage.vue'
 import MainPage from "@/components/MainPage.vue"
 import App from "@/App.vue"
 
-import { createRouter, createWebHistory } from 'vue-router'
+import {createRouter, createWebHistory} from 'vue-router'
 
-import StudentRegistrationPage from "@/components/widget/StudentRegistrationPage.vue"
 import StudentMainPage from "@/components/widget/StudentMainPage.vue"
 import StudentSchedule from "@/components/widget/StudentSchedule.vue"
 import StudentCourse from "@/components/widget/StudentCourse.vue"
 import StudentGrade from "@/components/widget/StudentGrade.vue"
 import StudentRate from "@/components/widget/StudentRate.vue"
-import ProfessorInformation from "@/components/widget/ProfessorInformation.vue"
+import LegacyInstructorManagement from "@/components/widget/LegacyInstructorManagement.vue"
 import RateForm from "@/components/widget/RateForm.vue"
-import McpApplication from "@/components/widget/McpApplication.vue"
+import McpApplication from "@/components/widget/StudentMcpApplication.vue"
+import {useDark} from "@vueuse/core";
+import Net from "@/components/util/network";
+import InstructorManagement from "@/components/widget/InstructorManagement.vue";
+import CourseManagement from "@/components/widget/CourseManagement.vue";
 
 let router = createRouter({
     history: createWebHistory(),
@@ -28,16 +31,12 @@ let router = createRouter({
             component: LoginPage,
         },
         {
-            path: '/mainpage',
+            path: '/home',
             component: MainPage,
             children: [
                 {
                     path: '/main',
                     component: StudentMainPage
-                },
-                {
-                    path: '/registration',
-                    component: StudentRegistrationPage
                 },
                 {
                     path: '/course',
@@ -52,25 +51,35 @@ let router = createRouter({
                     component: StudentSchedule,
                 },
                 {
-                    path:'/rate',
+                    path: '/rate',
                     component: StudentRate,
                 },
                 {
-                    path:'/professor-information',
-                    component: ProfessorInformation,
+                    path: '/instructor-management-legacy',
+                    component: LegacyInstructorManagement,
                 },
                 {
-                    path:'/rate-form',
+                    path: '/instructor-management',
+                    component: InstructorManagement,
+                },
+                {
+                    path: '/course-management',
+                    component: CourseManagement,
+                },
+                {
+                    path: '/rate-form',
                     component: RateForm,
                 },
                 {
-                    path:'/mcp-application',
+                    path: '/mcp-application',
                     component: McpApplication,
                 },
             ]
         },
     ]
 })
+
+Net.init()
 
 createApp(App)
     .use(router)

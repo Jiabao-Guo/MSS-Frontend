@@ -2,101 +2,140 @@
   <div>
     <div class="bg">
       <div class="mask"></div>
-      <div class="title">Memorial Self-Service</div>
+      <div class="title">Memorial Self-service</div>
     </div>
 
-    <div class="right">
+    <el-container class="right" v-loading="loading">
       <div class="contents">
-        <div class="righttitle">Course Registration System</div>
-        <br>
-        <input class="inputframe" v-model="username" placeholder="Username">
-        <br>
-        <input class="inputframe" v-model="password" placeholder="Password">
-        <br>
+        <div class="right-title-dimmed">MEMORIAL</div>
+        <div class="right-title">Self-service</div>
+
+        <p>
+          <el-row>
+            <el-col>
+              <el-input
+                  @keydown.enter="onLogin"
+                  class="input-frame" v-model="username"
+                  :placeholder="isStudentLogin ? 'Student Number' : 'Instructor Number'"
+              ></el-input>
+            </el-col>
+
+            <el-col>
+              <el-input
+                  @keydown.enter="onLogin"
+                  class="input-frame" v-model="password" placeholder="Password"></el-input>
+            </el-col>
+          </el-row>
+        </p>
+
         <div style="margin: 2px 6px; color: gray; ">
-          <input type="radio" name="role" :value="true" v-model="isStudentLogin">
-          <label for="student">Student</label>
-          <input type="radio" name="role" :value="false" v-model="isStudentLogin">
-          <label for="staff">Teacher</label>
+          <el-radio-group v-model="isStudentLogin">
+            <el-radio :label="true">Student</el-radio>
+            <el-radio :label="false">Instructor</el-radio>
+          </el-radio-group>
         </div>
-        <br>
-        <button class="login" @click="onLogin">Login</button>
-        <br>
-        <button class="forgetpassword">Forget password?</button>
+
+        <p>
+          <el-button
+              size="large" type="success" class="login"
+              @click="onLogin"
+          >
+            Login
+          </el-button>
+        </p>
+        <p>
+          <el-link>Forgot password?</el-link>
+        </p>
       </div>
-    </div>
+
+      <el-button class="button-toggle-dark" @click="useGlobalToggleDarkMode()()">
+        <el-icon>
+          <Moon/>
+        </el-icon>
+      </el-button>
+    </el-container>
   </div>
 </template>
 
-<script>
-import axios from "axios";
-import {ElMessage} from "element-plus";
+<script setup>
+import {
+  Moon
+} from '@element-plus/icons-vue'
+import {ElMessage} from "element-plus"
+import {sha256} from "js-sha256"
+import Net from "@/components/util/network"
+import {onMounted, ref} from "vue"
+import {useGlobalInitForDarkMode, useGlobalToggleDarkMode} from "@/components/util/global"
+import {useRouter} from "vue-router";
 
-export default {
-  data() {
-    return {
-      username: '',
-      password: '',
-      isStudentLogin: true
-    }
-  },
-  mounted() {
+const router = useRouter()
 
-  },
-  methods: {
-    onLogin() {
-      axios.post('http://localhost:8080/login', {
+const username = ref('')
+const password = ref('')
+const isStudentLogin = ref(true)
+const loading = ref(false)
 
-        /**
-         * 后端loginEntity 根据以下三个属性编写
-         * */
-        number_123: this.username,
-        password: this.password,
-        isStudentLogin: this.isStudentLogin
-      }).then(res => {
-
-        /** 将前端方法返回的结果 全部存入 res.data 并且用 response接收*/
-        let response = res.data
-
-        if (!response.isSuccess) {
-          ElMessage({
-            message: response.message,
-            type: 'error'
-          })
-          return
-        }
-        ElMessage({
-          message: response.message,
-          type: 'success'
-        })
-
-        /**  用过response.sessionId 拿到后端设置的值(手环)
-         *   二次加密
-         */
-        localStorage.setItem("session", response.sessionId)
-        localStorage.setItem("student_number", this.username)
-
-        this.$router.push('/mainpage')
-
-      })
-    }
-  }
+function mounted() {
+  useGlobalInitForDarkMode()()
 }
+
+function onLogin() {
+  loading.value = true
+  Net.post('/login', {
+    /**
+     * 后端loginEntity 根据以下三个属性编写
+     * */
+    number: username.value,
+    passwordSha256: sha256(password.value),
+    isStudentLogin: isStudentLogin.value
+  }).then(res => {
+
+    /** 将前端方法返回的结果 全部存入 res.data 并且用 response接收*/
+    let response = res.data
+
+    if (!response.success) {
+      ElMessage({
+        message: response.message,
+        type: 'error'
+      })
+      return
+    }
+    ElMessage({
+      message: response.message,
+      type: 'success'
+    })
+
+    /**  用过response.sessionId 拿到后端设置的值(手环)
+     *   二次加密
+     */
+    localStorage.setItem("session", response.sessionId)
+    localStorage.setItem("student_number", username.value)
+
+    Net.init()
+
+    setTimeout(() => {
+      router.push('/home')
+    }, 500)
+
+  }).finally(() => {
+    setTimeout(() => {
+      loading.value = false
+    }, 1000);
+  })
+}
+
+onMounted(mounted)
 
 </script>
 
+<style lang="scss" scoped>
+@import "src/assets/main";
 
-
-<style scoped>
 .bg {
   background: url("@/assets/images/mun.jpg");
-
   background-size: cover;
-
   position: absolute;
-
   width: calc(100% - 500px);
-
   height: 100%;
   left: 0;
   top: 0;
@@ -104,13 +143,20 @@ export default {
 
 .mask {
   background: black;
-  opacity: 0.5;
+  opacity: 0.3;
   position: absolute;
   width: 100%;
   height: 100%;
   left: 0;
   top: 0;
   z-index: 0;
+
+  transition: opacity 1s;
+}
+
+.mask:hover {
+  transition-delay: 0.5s;
+  opacity: 0;
 }
 
 .title {
@@ -134,20 +180,18 @@ export default {
 }
 
 .right {
-  background: black;
   height: 100%;
   width: 500px;
   right: 0;
   top: 0;
   z-index: 1;
   position: absolute;
-  box-shadow: greenyellow 0 0 240px;
-  transition: box-shadow 2s;
+  transition: box-shadow 0.5s;
   margin: 0;
 }
 
 .right:hover {
-  box-shadow: purple 0 0 240px 99px;
+  box-shadow: black 0 0 24px;
 }
 
 .contents {
@@ -160,57 +204,42 @@ export default {
   transform: translateY(-50%);
 }
 
-.righttitle {
-  font-size: 24px;
-  font-weight: bold;
+.right-title-dimmed {
+  font-size: 36px;
+  color: $color-dark;
 }
 
-.inputframe {
-  opacity: 0.5;
-  text-align: center;
+.right-title {
+  font-size: 24px;
+  font-weight: bold;
+  color: $color-dark;
+}
+
+.dark .right-title {
+  color: $color-bright;
+}
+
+.dark .right-title-dimmed {
+  color: $color-bright;
+}
+
+
+.input-frame {
+  width: 40%;
+  margin-top: 4px;
 }
 
 .login {
-  background: dodgerblue;
-  transition: background 1s;
-}
-
-.login:hover {
-  background: pink;
-}
-
-.forgetpassword {
-  background: transparent;
-  transition: background 1s;
-  width: 160px !important;
-}
-
-.forgetpassword:hover {
-  background: palegreen;
-}
-
-button {
-  border: 0;
-  border-radius: 8px;
-  padding: 10px;
-
-  font-weight: bold;
-  margin: 4px;
-
-  width: 240px;
-
+  width: 220px;
   cursor: pointer;
-
-  color: rgb(232, 232, 232);
+  font-weight: bold;
 }
 
-input {
-  border-radius: 8px;
-  padding: 6px 2px;
-
-  font-size: 18px;
-
+.button-toggle-dark {
+  position: absolute;
+  right: 20px;
+  bottom: 20px;
+  z-index: 10;
 }
-
 
 </style>
