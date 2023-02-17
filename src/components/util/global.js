@@ -2,14 +2,14 @@ import {ref} from "vue";
 import {useDark} from "@vueuse/core";
 
 export function useGlobalSetDarkMode() {
-    return function(dark) {
+    return function (dark) {
         ref(useDark()).value = !!dark
         localStorage.setItem('dark', dark ? 'true' : 'false')
     }
 }
 
 export function useGlobalToggleDarkMode() {
-    return function() {
+    return function () {
         let current = ref(useDark()).value
         ref(useDark()).value = !current
         localStorage.setItem('dark', !current ? 'true' : 'false')
@@ -17,8 +17,21 @@ export function useGlobalToggleDarkMode() {
 }
 
 export function useGlobalInitForDarkMode() {
-    return function() {
+    return function () {
         let dark = localStorage.getItem('dark')
         ref(useDark()).value = dark === 'true'
+    }
+}
+
+export function useDefaultElMessageBoxConfig() {
+    return function () {
+        return {
+            draggable: true,
+            customStyle: {
+                borderRadius: '12px',
+                padding: '12px',
+            },
+
+        }
     }
 }

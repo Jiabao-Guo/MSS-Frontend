@@ -1,12 +1,12 @@
 <template>
   <el-card class="card">
-    <el-calendar ref="calendar" class="calendar">
+    <el-calendar ref="calendar" class="calendar" v-loading="loading">
       <template #date-cell="{ data }">
-        <div class="wrapper-div" @click="(e) => this.handleAddSchedule(e, data)">
+        <div class="wrapper-div" @click="(e) => handleAddSchedule(e, data)">
           <span class="span-date">{{ data.date.getDate() }}</span>
           <span class="span-schedule">
           <el-popover
-              v-for="(s, i) in (this.schedules[this.keyFromDate(data.date)] || [])"
+              v-for="(s, i) in (schedules[keyFromDate(data.date)] || [])"
               :key="i"
               placement="right"
               :show-after="0"
@@ -17,15 +17,15 @@
           >
             <template #reference>
               <el-tag
-                  @mouseenter="() => this.handleTagMouseEnter(this.keyFromDate(data.date) + i)"
-                  @mouseleave="() => this.handleTagMouseLeave(this.keyFromDate(data.date) + i)"
-                  @click="(e) => this.handleUpdateSchedule(e, data, s)"
-                  :type="this.scheduleHover[this.keyFromDate(data.date) + i] ? 'warning' : ''"
+                  @mouseenter="() => handleTagMouseEnter(keyFromDate(data.date) + i)"
+                  @mouseleave="() => handleTagMouseLeave(keyFromDate(data.date) + i)"
+                  @click="(e) => handleUpdateSchedule(e, data, s)"
+                  :type="scheduleHover[keyFromDate(data.date) + i] ? 'warning' : ''"
                   effect="dark"
                   size="small"
               >
                 <div>
-                {{ this.getTimePart(s.subject) }}
+                {{ getTimePart(s.subject) }}
                 </div>
               </el-tag>
             </template>
@@ -37,139 +37,146 @@
   </el-card>
 </template>
 
-<script>
+<script setup>
 
 import {ElMessage, ElMessageBox} from "element-plus";
 import Net from "@/components/util/network";
+import {onMounted, reactive, ref} from "vue";
+import {useDefaultElMessageBoxConfig} from "@/components/util/global";
 
-export default {
-  data() {
-    return {
-      // year-month-day: [schedules]
-      schedules: {},
-      scheduleHover: {}
-    }
-  },
-  mounted() {
-    this.reloadSchedule()
-  },
-  methods: {
-    getTimePart(s) {
-      let parts = s.split(' ')
-      return parts.length === 1 ? s : parts.slice(0, -1).join(' ').trim()
-    },
-    // Date object -> "YYYY-MM-DD"
-    keyFromDate(date) {
-      let year = date.getFullYear()
-      let month = date.getMonth() + 1
-      let day = date.getDate()
+const loading = ref(false)
+const schedules = reactive({})
+const scheduleHover = reactive({})
+const defaultElConfig = useDefaultElMessageBoxConfig()
 
-      year = `${year}`
-      month = month < 10 ? `0${month}` : `${month}`
-      day = day < 10 ? `0${day}` : `${day}`
+function getTimePart(s) {
+  let parts = s.split(' ')
+  return parts.length === 1 ? s : parts.slice(0, -1).join(' ').trim()
+}
 
-      return `${year}-${month}-${day}`
-    },
-    async reloadSchedule() {
-      let res = await Net.post('/schedule/query', {
-        studentNumber: localStorage.getItem("student_number"),
-        sessionId: localStorage.getItem("session"),
-      }).catch(() => {
+// Date object -> "YYYY-MM-DD"
+function keyFromDate(date) {
+  let year = date.getFullYear()
+  let month = date.getMonth() + 1
+  let day = date.getDate()
+
+  year = `${year}`
+  month = month < 10 ? `0${month}` : `${month}`
+  day = day < 10 ? `0${day}` : `${day}`
+
+  return `${year}-${month}-${day}`
+}
+
+async function reloadSchedule() {
+  loading.value = true
+  let res = await Net.post('/schedule/query', {
+    studentNumber: localStorage.getItem("student_number"),
+    sessionId: localStorage.getItem("session"),
+  }).catch(() => {
+  }).finally(() => {
+    setTimeout(() => {
+      loading.value = false
+    }, 500)
+  })
+
+  if (!res.data.success) {
+    ElMessage.error({
+      message: res.data.message,
+    })
+    return
+  }
+
+  const sched = {}
+  for (let schedule of res.data.schedules) {
+    // 2023-02-10T20:25:20.000+00:00
+    let key = keyFromDate(new Date(schedule.date))
+    sched[key] ||= []
+    sched[key].push(schedule)
+  }
+  Object.assign(schedules, sched)
+}
+
+async function handleAddSchedule(event, data) {
+  let date = keyFromDate(data.date);
+  let subject = await ElMessageBox.prompt(`What's your plan on ${date}?`, 'New Schedule', {
+    confirmButtonText: 'Create',
+    ...defaultElConfig()
+  })
+      .catch(() => {
       })
 
-      if (!res.data.success) {
-        ElMessage.error({
-          message: res.data.message,
-        })
-        return
-      }
+  if (!subject || subject.action !== 'confirm') {
+    return
+  }
 
-      let schedules = {}
-      for (let schedule of res.data.schedules) {
-        // 2023-02-10T20:25:20.000+00:00
-        let key = this.keyFromDate(new Date(schedule.date))
-        schedules[key] ||= []
-        schedules[key].push(schedule)
-      }
-      this.schedules = schedules
-    },
-    async handleAddSchedule(event, data) {
-      let date = this.keyFromDate(data.date);
-      let subject = await ElMessageBox.prompt(`What's your plan on ${date}?`, 'New Schedule', {
-        confirmButtonText: 'Create',
-        draggable: true,
-      })
-          .catch(() => {
-          })
+  let addScheduleForm = {
+    studentNumber: localStorage.getItem("student_number"),
+    sessionId: localStorage.getItem("session"),
+    date: data.date.getTime(),
+    subject: subject.value,
+  }
 
-      if (!subject || subject.action !== 'confirm') {
-        return
-      }
+  let res = await Net.post('/schedule', addScheduleForm)
+  ElMessage({
+    type: res.data.success ? 'success' : 'error',
+    message: res.data.message
+  })
+  await reloadSchedule()
+}
 
-      let addScheduleForm = {
-        studentNumber: localStorage.getItem("student_number"),
-        sessionId: localStorage.getItem("session"),
-        date: data.date.getTime(),
-        subject: subject.value,
-      }
+async function handleUpdateSchedule(event, data, oldSchedule) {
+  event.stopPropagation()
 
-      let res = await Net.post('/schedule', addScheduleForm)
+  let date = keyFromDate(data.date);
+
+  ElMessageBox.prompt(`What's your new plan on ${date}?`, 'Update Schedule', {
+    distinguishCancelAndClose: true,
+    confirmButtonText: 'Update',
+    cancelButtonText: "Delete",
+    inputValue: oldSchedule.subject,
+    inputPattern: /.+/,
+    inputErrorMessage: 'Schedule must not be empty.',
+    ...defaultElConfig()
+  }).then(res => {
+    let newSchedule = oldSchedule
+    newSchedule.subject = res.value
+    Net.put(`/schedule/${oldSchedule.id}`, newSchedule).then(r => {
       ElMessage({
-        type: res.data.success ? 'success' : 'error',
-        message: res.data.message
+        type: r.data.success ? 'success' : 'error',
+        message: r.data.message
       })
-      await this.reloadSchedule()
-    },
-    async handleUpdateSchedule(event, data, oldSchedule) {
-      event.stopPropagation()
-
-      let date = this.keyFromDate(data.date);
-
-      ElMessageBox.prompt(`What's your new plan on ${date}?`, 'Update Schedule', {
-        distinguishCancelAndClose: true,
-        confirmButtonText: 'Update',
-        cancelButtonText: "Delete",
-        inputValue: oldSchedule.subject,
-        inputPattern: /.+/,
-        inputErrorMessage: 'Schedule must not be empty.',
-        draggable: true,
-      }).then(res => {
-        let newSchedule = oldSchedule
-        newSchedule.subject = res.value
-        Net.put(`/schedule/${oldSchedule.id}`, newSchedule).then(r => {
+      reloadSchedule()
+    }).catch(() => {
+    })
+  }).catch((action) => {
+    if (action === 'cancel') {
+      ElMessageBox.confirm('Are you sure to delete this?', 'Delete', {
+        type: 'warning',
+        ...defaultElConfig()
+      }).then(() => {
+        Net.delete(`/schedule/${oldSchedule.id}`).then(r => {
           ElMessage({
             type: r.data.success ? 'success' : 'error',
             message: r.data.message
           })
-          this.reloadSchedule()
-        }).catch(() => {
+          reloadSchedule()
         })
-      }).catch((action) => {
-        if (action === 'cancel') {
-          ElMessageBox.confirm('Are you sure to delete this?', 'Delete', {
-            type: 'warning',
-            draggable: true,
-          }).then(() => {
-            Net.delete(`/schedule/${oldSchedule.id}`).then(r => {
-              ElMessage({
-                type: r.data.success ? 'success' : 'error',
-                message: r.data.message
-              })
-              this.reloadSchedule()
-            })
-          }).catch(() => {
-          })
-        }
+      }).catch(() => {
       })
-    },
-    handleTagMouseEnter(key) {
-      this.scheduleHover[key] = true;
-    },
-    handleTagMouseLeave(key) {
-      this.scheduleHover[key] = false;
-    },
-  }
+    }
+  })
 }
+
+function handleTagMouseEnter(key) {
+  scheduleHover[key] = true;
+}
+
+function handleTagMouseLeave(key) {
+  scheduleHover[key] = false;
+}
+
+onMounted(reloadSchedule)
+
 
 </script>
 
