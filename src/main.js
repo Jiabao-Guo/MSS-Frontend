@@ -15,7 +15,6 @@ import StudentSchedule from "@/components/widget/StudentSchedule.vue"
 import StudentCourse from "@/components/widget/StudentCourse.vue"
 import StudentGrade from "@/components/widget/StudentGrade.vue"
 import StudentRate from "@/components/widget/StudentRate.vue"
-import LegacyInstructorManagement from "@/components/widget/LegacyInstructorManagement.vue"
 import RateForm from "@/components/widget/RateForm.vue"
 import McpApplication from "@/components/widget/StudentMcpApplication.vue"
 import {useDark} from "@vueuse/core";
@@ -53,10 +52,6 @@ let router = createRouter({
                 {
                     path: '/rate',
                     component: StudentRate,
-                },
-                {
-                    path: '/instructor-management-legacy',
-                    component: LegacyInstructorManagement,
                 },
                 {
                     path: '/instructor-management',

@@ -95,10 +95,6 @@
                 <template #title>Instructor Management</template>
               </el-menu-item>
 
-              <el-menu-item index="instructor-management-legacy">
-                <template #title>Instructor Management (Legacy)</template>
-              </el-menu-item>
-
             </el-sub-menu>
 
           </el-menu>
@@ -130,13 +126,18 @@ import isDebug from "./config";
 import {ElMessage, ElMessageBox} from "element-plus";
 import Net from "@/components/util/network";
 import {onMounted, ref} from "vue";
-import {useGlobalInitForDarkMode, useGlobalToggleDarkMode} from "@/components/util/global";
+import {
+  useDefaultElMessageBoxConfig,
+  useGlobalInitForDarkMode,
+  useGlobalToggleDarkMode
+} from "@/components/util/global";
 import {useRouter} from "vue-router";
 
 const router = useRouter()
 
 const name = ref('')
 const currentRoute = ref('')
+const defaultElConfig = useDefaultElMessageBoxConfig()
 
 function handleSelect(s) {
   currentRoute.value = s
@@ -147,11 +148,7 @@ function handleLogout() {
     confirmButtonText: 'Log out',
     cancelButtonText: 'Cancel',
     type: 'warning',
-    draggable: true,
-    customStyle: {
-      borderRadius: '12px',
-      padding: '12px',
-    }
+    ...defaultElConfig(),
   }).then(() => {
     localStorage.removeItem("session")
     localStorage.removeItem("student_number")

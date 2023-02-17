@@ -196,7 +196,9 @@ import {
   Plus, Close
 } from '@element-plus/icons-vue'
 import FormItems from "@/components/generic/FormItems.vue";
+import {useDefaultElMessageBoxConfig} from "@/components/util/global";
 
+/// ================== Props ==================
 const props = defineProps({
   model: String,
   noun: String,
@@ -213,8 +215,10 @@ const props = defineProps({
   },
 })
 
+/// ================== Emits ==================
 const emit = defineEmits(['selection-updated'])
 
+/// ================== Bindings ==================
 const rules = reactive(props.columns.reduce((acc, column) => {
   acc[getProp(column, column.prop)] = column.rules
   return acc
@@ -247,6 +251,9 @@ const tableData = ref([])
 const loading = ref(false)
 const currentSelection = ref([])
 const shouldShowAddingDialog = ref(false)
+
+/// ================== Logics ==================
+const defaultElConfig = useDefaultElMessageBoxConfig()
 
 function getProp(p, defaultKey) {
   return (p.alias || {})[defaultKey] || defaultKey
@@ -314,7 +321,7 @@ async function handleCellClick(row, column) {
     //正则 不能为空字符
     inputPattern: /.+/,
     inputErrorMessage: `${property} must not be empty.`,
-    draggable: true,
+    ...defaultElConfig()
   }).catch(() => {
   })
 
@@ -341,7 +348,7 @@ async function handleDeleteModel() {
         confirmButtonText: "Delete",
         cancelButtonText: "Cancel",
         type: "warning",
-        draggable: true,
+        ...defaultElConfig()
       }
   ).catch(() => {
   })
@@ -363,7 +370,7 @@ async function handleDeleteModel() {
             title: 'Foreign Key Constraint Failed',
             message: `These ${getNounLowercased()}(s) are still required in somewhere else. We can't delete them right now.`,
             type: 'error',
-            draggable: true,
+            ...defaultElConfig()
           })
         })
         .finally(() => {
@@ -387,7 +394,7 @@ async function handleCreateModel() {
           title: 'Foreign Key Constraint Failed',
           message: `This ${getNounLowercased()} requires some entities that don't yet exist. Please create them first.`,
           type: 'error',
-          draggable: true,
+          ...defaultElConfig()
         })
       })
   ElMessage({
