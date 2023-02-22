@@ -1,5 +1,8 @@
 import axios from "axios"
 import isDebug from "@/components/config";
+import md5 from "js-md5";
+import {sha256} from "js-sha256";
+import {timestamp} from "@vueuse/core";
 
 export default class Net {
 
@@ -9,6 +12,19 @@ export default class Net {
         for (let key in headers) {
             axios.defaults.headers.common[key] = headers[key]
         }
+    }
+
+    static timestampToSalt() {
+        return `${Math.floor(Date.now() / 1000 / 10)}`
+    }
+
+    static saltForLogin(passwordSha256Sha256, number, isStudentLogin) {
+        return sha256(
+            passwordSha256Sha256
+            + this.timestampToSalt()
+            + `${number}`
+            + `${isStudentLogin ? 1 : 0}`
+        )
     }
 
     static baseUrl() {
@@ -24,6 +40,12 @@ export default class Net {
         }
     }
 
+    static saltFactor() {
+        let factor = localStorage.getItem("salt_factor") || this.baseUrl()
+        factor += `${Math.round(timestamp() / 10)}`
+        return factor
+    }
+
     static get(url, data) {
         let request_string = ""
         for (let key in data) {
@@ -31,6 +53,9 @@ export default class Net {
         }
         request_string = request_string.substring(
             0, request_string.length - 1)
+
+        // let salt = sha256(this.saltFactor() + request_string)
+        // request_string += `&salt=${salt}`
 
         console.log(`GET ${url}?${request_string}`)
         return axios.get(`${url}?${request_string}`)

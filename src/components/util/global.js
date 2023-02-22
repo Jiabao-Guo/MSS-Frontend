@@ -66,7 +66,7 @@ export function useTasks() {
 
 export function useDefaultConfig() {
     return {
-        minLoadingTimeMillis: 200,
+        minLoadingTimeMillis: 500,
         taskRefreshRateMillis: 1000,
     }
 }

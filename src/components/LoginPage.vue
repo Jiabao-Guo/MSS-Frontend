@@ -16,7 +16,7 @@
               <el-input
                   @keydown.enter="onLogin"
                   class="input-frame" v-model="username"
-                  :placeholder="isStudentLogin ? 'Student Number' : 'Instructor Number'"
+                  :placeholder="studentLogin ? 'Student Number' : 'Instructor Number'"
               ></el-input>
             </el-col>
 
@@ -29,7 +29,7 @@
         </p>
 
         <div style="margin: 2px 6px; color: gray; ">
-          <el-radio-group v-model="isStudentLogin">
+          <el-radio-group v-model="studentLogin">
             <el-radio :label="true">Student</el-radio>
             <el-radio :label="false">Instructor</el-radio>
           </el-radio-group>
@@ -68,11 +68,13 @@ import {onMounted, ref} from "vue"
 import {useDefaultConfig, useInitForDarkMode, useToggleDarkMode} from "@/components/util/global"
 import {useRouter} from "vue-router";
 
+import md5 from 'js-md5';
+
 const router = useRouter()
 
 const username = ref('')
 const password = ref('')
-const isStudentLogin = ref(true)
+const studentLogin = ref(true)
 const loading = ref(false)
 const config = useDefaultConfig()
 
@@ -82,13 +84,16 @@ function mounted() {
 
 function onLogin() {
   loading.value = true
+  let passwordSha256Sha256 = sha256(sha256(password.value))
   Net.post('/login', {
     /**
      * 后端loginEntity 根据以下三个属性编写
      * */
     number: username.value,
-    passwordSha256: sha256(password.value),
-    isStudentLogin: isStudentLogin.value
+    passwordSha256Sha256: passwordSha256Sha256,
+    studentLogin: studentLogin.value,
+    verifyOnly: false,
+    salt: Net.saltForLogin(passwordSha256Sha256, username.value, studentLogin.value)
   }).then(res => {
 
     /** 将前端方法返回的结果 全部存入 res.data 并且用 response接收*/
@@ -111,7 +116,7 @@ function onLogin() {
      */
     localStorage.setItem("session", response.sessionId)
     localStorage.setItem("student_number", username.value)
-
+    localStorage.setItem("salt_factor", sha256(password.value))
 
     setTimeout(() => {
       Net.init()

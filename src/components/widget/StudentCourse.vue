@@ -58,6 +58,16 @@
       </el-button>
     </template>
   </GenericTable>
+
+  <DropCourseDialog
+      v-model:show-dialog="showDropDialog"
+      :courseNumber="dropCourseNumber"
+      :courseName="dropCourseName"
+      :user-number="userNumber"
+      :username="username"
+      @cancel="handleCancel"
+      @confirm="handleDropConfirm"
+  />
 </template>
 
 <script setup>
@@ -65,9 +75,16 @@ import {onMounted, reactive, ref} from "vue";
 import GenericTable from "@/components/generic/GenericTable.vue";
 import Net from "@/components/util/network";
 import {ElMessage, ElMessageBox} from "element-plus";
+import DropCourseDialog from "@/components/widget/DropCourseDialog.vue";
 
 const selection = ref([])
 const myCourses = ref([])
+
+const showDropDialog = ref(false)
+const dropCourseNumber = ref(0)
+const dropCourseName = ref('')
+const username = ref(localStorage.getItem("student_name"))
+const userNumber = ref(localStorage.getItem("student_number"))
 
 const columns = reactive([
   {
@@ -174,17 +191,25 @@ async function handleRegister() {
   await reloadMyCourses()
 }
 
-async function handleDrop(row) {
-  let registry = myCourses.value.find(it => it.courseNumber === row.courseNumber)
+function handleDrop(row) {
+  dropCourseNumber.value = row.courseNumber
+  dropCourseName.value = row.course.name
+  showDropDialog.value = true
+  console.log(showDropDialog.value)
+}
+
+async function handleDropConfirm() {
+  let registry = myCourses.value.find(it => it.courseNumber === dropCourseNumber.value)
   if (!registry) {
     return
   }
   let span = '<span style="color: red; font-weight: bold">'
   let spanEnd = '</span>'
   let action = await ElMessageBox.confirm(
-      `Are you sure to ${span}DROP ${registry.course.name} (${row.courseNumber})${spanEnd}?`,
+      `Are you sure to ${span}DROP ${registry.course.name} (${dropCourseNumber.value})${spanEnd}?`,
       'Confirm', {
-        confirmButtonText: `Drop ${registry.course.name} (${row.courseNumber})`,
+        title: 'Final Confirm',
+        confirmButtonText: `Drop ${registry.course.name} (${dropCourseNumber.value})`,
         showCancelButton: false,
         dangerouslyUseHTMLString: true,
         type: 'warning'
@@ -201,6 +226,10 @@ async function handleDrop(row) {
     type: response.data.success ? 'success' : 'error'
   })
   await reloadMyCourses()
+}
+
+function handleCancel() {
+  showDropDialog.value = false
 }
 
 onMounted(reloadMyCourses)

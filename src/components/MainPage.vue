@@ -233,6 +233,7 @@ function checkSessionId() {
     let response = res.data
     name.value = response.name
     localStorage.setItem("student_id", response.id)
+    localStorage.setItem("student_name", response.name)
     ElMessage.success(`Hello, ${response.name}!`)
     router.push('/main')
   })
@@ -342,7 +343,6 @@ onUnmounted(unmounted)
 .header-title {
   left: 20px;
   margin-bottom: 4px;
-  word-wrap: anywhere;
 }
 
 .header-subtitle {
