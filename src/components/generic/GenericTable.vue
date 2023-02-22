@@ -55,15 +55,25 @@
       -------------------------------------------------------->
       <el-divider direction="horizontal"/>
 
-      <el-button
-          type="primary"
-          @click="handleAddModel"
-      >
-        <el-icon>
-          <Plus/>
-        </el-icon>&nbsp;
-        Add {{ noun }}
-      </el-button>
+      <el-dropdown style="margin-right: 10px;">
+        <el-button type="primary">
+          <el-icon>
+            <Plus/>
+          </el-icon>&nbsp;
+          Add {{ noun }}
+        </el-button>
+        <template #dropdown>
+          <el-dropdown-menu>
+            <el-dropdown-item @click="handleAddModel">
+              Add One
+            </el-dropdown-item>
+
+            <el-dropdown-item @click="handleImportFromCSV">
+              Import From CSV
+            </el-dropdown-item>
+          </el-dropdown-menu>
+        </template>
+      </el-dropdown>
 
       <el-button
           type="danger"
@@ -75,6 +85,13 @@
           <Close/>
         </el-icon>&nbsp;
         Delete {{ currentSelection.length }} {{ noun }}(s)
+      </el-button>
+
+      <el-button @click="reloadTableData">
+        <el-icon>
+          <Refresh/>
+        </el-icon>&nbsp;
+        Refresh
       </el-button>
     </div>
 
@@ -103,27 +120,56 @@
   <!--------------------------------------------------------
   Table
   -------------------------------------------------------->
-  <el-table
-      :data="tableData"
-      :class-name="`data-table ${tableClass}`"
-      v-loading="loading"
-      stripe
-      class="gt-data-table"
-      cell-class-name="data-table-cell"
-      @cell-click="handleCellClick"
-      @selection-change="handleSelectionChange"
+  <el-upload
+      drag
+      ref="uploaderRef"
+      v-model:file-list="uploadFileList"
+      :name="uploadFileFieldName"
+      :method="uploadMethod"
+      :action="uploadAction"
+      :headers="uploadHeaders"
+      :multiple="false"
+      :accept="uploadAcceptType"
+      :auto-upload="uploadShouldAutoUpload"
+      :on-success="handleUploadSuccess"
   >
-    <el-table-column type="selection" width="55"/>
+    <el-table
+        :data="tableData"
+        :class-name="`data-table ${tableClass}`"
+        v-loading="loading"
+        stripe
+        class="gt-data-table"
+        cell-class-name="gt-data-table-cell"
+        @click="(e) => e.stopPropagation()"
+        @cell-click="handleCellClick"
+        @selection-change="handleSelectionChange"
+    >
+      <el-table-column type="selection" width="55"/>
 
-    <el-table-column
-        v-for="column in columns"
-        :key="column.prop"
-        :prop="column.prop"
-        :label="column.label"
-        :width="column.width"
-        sortable
-    />
-  </el-table>
+      <el-table-column
+          v-for="column in columns"
+          :key="column.prop"
+          :prop="column.prop"
+          :label="column.label"
+          :width="column.width"
+          sortable
+      >
+        <template #default="scope">
+        <span v-if="column.dataType === 'switch'">
+          <el-switch
+              v-model="scope.row[column.prop]"
+              :active-value="1"
+              :inactive-value="0"
+              :disabled="true"
+          />
+        </span>
+        <span v-else-if="column.dataType === 'select'">
+          {{ column.options.find(x => x.value === scope.row[column.prop]).label }}
+        </span>
+        </template>
+      </el-table-column>
+    </el-table>
+  </el-upload>
 
   <!--------------------------------------------------------
   Add Dialog
@@ -192,11 +238,11 @@ import {onMounted, reactive, ref} from "vue";
 import {ElMessage, ElMessageBox} from "element-plus";
 import Net from "@/components/util/network";
 import {
-  Check, Checked, CircleCheck,
+  Check, Refresh,
   Plus, Close
 } from '@element-plus/icons-vue'
 import FormItems from "@/components/generic/FormItems.vue";
-import {useDefaultElMessageBoxConfig} from "@/components/util/global";
+import {useDefaultConfig, useDefaultElMessageBoxConfig, useTasks} from "@/components/util/global";
 
 /// ================== Props ==================
 const props = defineProps({
@@ -214,6 +260,13 @@ const props = defineProps({
     required: false,
   },
 })
+
+const uploadFileFieldName = "file"
+const uploadMethod = "POST"
+const uploadAction = `${Net.baseUrl()}/${props.model}/upload`
+const uploadHeaders = Net.defaultHeaders()
+const uploadAcceptType = "text/csv"
+const uploadShouldAutoUpload = true
 
 /// ================== Emits ==================
 const emit = defineEmits(['selection-updated'])
@@ -242,6 +295,8 @@ const createForm = reactive(props.columns.reduce((acc, column) => {
 const shouldUseSmallPaginationSize = ref(false)
 const shouldShowBackground = ref(true)
 const paginationDisabled = ref(false)
+const uploaderRef = ref(null)
+let uploadFileList = reactive([])
 
 const currentPage = ref(1)
 const pageSize = ref(40)
@@ -254,6 +309,7 @@ const shouldShowAddingDialog = ref(false)
 
 /// ================== Logics ==================
 const defaultElConfig = useDefaultElMessageBoxConfig()
+const config = useDefaultConfig()
 
 function getProp(p, defaultKey) {
   return (p.alias || {})[defaultKey] || defaultKey
@@ -271,7 +327,7 @@ async function reloadTableData() {
   }).finally(() => {
     setTimeout(() => {
       loading.value = false
-    }, 500)
+    }, config.minLoadingTimeMillis)
   })
 
   tableData.value = response.data.content
@@ -300,6 +356,10 @@ function handleCurrentChange() {
   reloadTableData()
 }
 
+function accessNestedProperty(obj, path) {
+  return path.split('.').reduce((acc, cur) => acc[cur], obj)
+}
+
 async function handleCellClick(row, column) {
   // 要修改的项目，比如双击的是name，那property就是name.
   let targetColumn = props.columns.find((c) => c.label === column.label)
@@ -315,13 +375,14 @@ async function handleCellClick(row, column) {
   }
 
   // row就是整行的json
-  let action = await ElMessageBox.prompt(`Please input the new ${targetColumn.label}.`, "Edit", {
+  let action = await ElMessageBox.prompt(`Input new ${targetColumn.label}:`, "Edit", {
     // 把现在的值传进去
-    inputValue: row[targetColumn.prop],
+    inputValue: accessNestedProperty(row, targetColumn.prop),
     //正则 不能为空字符
     inputPattern: /.+/,
     inputErrorMessage: `${property} must not be empty.`,
-    ...defaultElConfig()
+    inputValidator: targetColumn.createForm.validator || (() => true),
+    ...defaultElConfig
   }).catch(() => {
   })
 
@@ -348,7 +409,7 @@ async function handleDeleteModel() {
         confirmButtonText: "Delete",
         cancelButtonText: "Cancel",
         type: "warning",
-        ...defaultElConfig()
+        ...defaultElConfig
       }
   ).catch(() => {
   })
@@ -370,7 +431,7 @@ async function handleDeleteModel() {
             title: 'Foreign Key Constraint Failed',
             message: `These ${getNounLowercased()}(s) are still required in somewhere else. We can't delete them right now.`,
             type: 'error',
-            ...defaultElConfig()
+            ...defaultElConfig
           })
         })
         .finally(() => {
@@ -394,7 +455,7 @@ async function handleCreateModel() {
           title: 'Foreign Key Constraint Failed',
           message: `This ${getNounLowercased()} requires some entities that don't yet exist. Please create them first.`,
           type: 'error',
-          ...defaultElConfig()
+          ...defaultElConfig
         })
       })
   ElMessage({
@@ -402,6 +463,30 @@ async function handleCreateModel() {
     type: response.data['success'] ? 'success' : 'error'
   })
   await reloadTableData()
+}
+
+function handleImportFromCSV() {
+  let uploadInput = document.createElement('input')
+  uploadInput.type = 'file'
+  uploadInput.accept = 'text/csv'
+  uploadInput.onchange = (e) => {
+    let file = e.target.files[0]
+    if (!file) {
+      return
+    }
+    uploaderRef.value.handleStart(file)
+    uploaderRef.value.submit()
+  }
+  uploadInput.click()
+}
+
+function handleUploadSuccess(res) {
+  if (!res.success) {
+    ElMessage.error(res.message)
+    return
+  }
+
+  useTasks().addTask(res.message)
 }
 
 onMounted(reloadTableData)
@@ -432,6 +517,8 @@ onMounted(reloadTableData)
 .gt-data-table {
   width: 100%;
   border-radius: 12px;
+  margin: 0;
+  padding: 0;
 }
 
 .gt-data-table-cell {
@@ -442,6 +529,16 @@ onMounted(reloadTableData)
   border-radius: 12px;
   border: 0;
   box-shadow: black 0 0 !important;
+}
+
+.el-upload-dragger {
+  cursor: pointer;
+  border: none;
+}
+
+.el-upload-dragger, .el-upload-dragger.is-dragover {
+  cursor: pointer;
+  padding: 0;
 }
 
 </style>

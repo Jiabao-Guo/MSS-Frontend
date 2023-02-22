@@ -21,6 +21,7 @@ import {useDark} from "@vueuse/core";
 import Net from "@/components/util/network";
 import InstructorManagement from "@/components/widget/InstructorManagement.vue";
 import CourseManagement from "@/components/widget/CourseManagement.vue";
+import StudentManagement from "@/components/widget/StudentManagement.vue";
 
 let router = createRouter({
     history: createWebHistory(),
@@ -60,6 +61,10 @@ let router = createRouter({
                 {
                     path: '/course-management',
                     component: CourseManagement,
+                },
+                {
+                    path: '/student-management',
+                    component: StudentManagement,
                 },
                 {
                     path: '/rate-form',

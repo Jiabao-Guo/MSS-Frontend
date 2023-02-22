@@ -72,7 +72,7 @@
       <div v-else-if="c.dataType === 'select'">
         <el-select v-model="targetForm[getProp(c)]" placeholder="Select One">
           <el-option
-              v-for="option in c.createForm.options"
+              v-for="option in c.options"
               :key="option.value"
               :label="option.label"
               :value="option.value"

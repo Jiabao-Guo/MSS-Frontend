@@ -42,12 +42,13 @@
 import {ElMessage, ElMessageBox} from "element-plus";
 import Net from "@/components/util/network";
 import {onMounted, reactive, ref} from "vue";
-import {useDefaultElMessageBoxConfig} from "@/components/util/global";
+import {useDefaultConfig, useDefaultElMessageBoxConfig} from "@/components/util/global";
 
 const loading = ref(false)
 const schedules = reactive({})
 const scheduleHover = reactive({})
 const defaultElConfig = useDefaultElMessageBoxConfig()
+const config = useDefaultConfig()
 
 function getTimePart(s) {
   let parts = s.split(' ')
@@ -76,7 +77,7 @@ async function reloadSchedule() {
   }).finally(() => {
     setTimeout(() => {
       loading.value = false
-    }, 500)
+    }, config.minLoadingTimeMillis)
   })
 
   if (!res.data.success) {
@@ -100,7 +101,7 @@ async function handleAddSchedule(event, data) {
   let date = keyFromDate(data.date);
   let subject = await ElMessageBox.prompt(`What's your plan on ${date}?`, 'New Schedule', {
     confirmButtonText: 'Create',
-    ...defaultElConfig()
+    ...defaultElConfig
   })
       .catch(() => {
       })
@@ -136,7 +137,7 @@ async function handleUpdateSchedule(event, data, oldSchedule) {
     inputValue: oldSchedule.subject,
     inputPattern: /.+/,
     inputErrorMessage: 'Schedule must not be empty.',
-    ...defaultElConfig()
+    ...defaultElConfig
   }).then(res => {
     let newSchedule = oldSchedule
     newSchedule.subject = res.value
@@ -152,7 +153,7 @@ async function handleUpdateSchedule(event, data, oldSchedule) {
     if (action === 'cancel') {
       ElMessageBox.confirm('Are you sure to delete this?', 'Delete', {
         type: 'warning',
-        ...defaultElConfig()
+        ...defaultElConfig
       }).then(() => {
         Net.delete(`/schedule/${oldSchedule.id}`).then(r => {
           ElMessage({

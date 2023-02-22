@@ -48,7 +48,7 @@
         </p>
       </div>
 
-      <el-button class="button-toggle-dark" @click="useGlobalToggleDarkMode()()">
+      <el-button class="button-toggle-dark" @click="useToggleDarkMode()()">
         <el-icon>
           <Moon/>
         </el-icon>
@@ -65,7 +65,7 @@ import {ElMessage} from "element-plus"
 import {sha256} from "js-sha256"
 import Net from "@/components/util/network"
 import {onMounted, ref} from "vue"
-import {useGlobalInitForDarkMode, useGlobalToggleDarkMode} from "@/components/util/global"
+import {useDefaultConfig, useInitForDarkMode, useToggleDarkMode} from "@/components/util/global"
 import {useRouter} from "vue-router";
 
 const router = useRouter()
@@ -74,9 +74,10 @@ const username = ref('')
 const password = ref('')
 const isStudentLogin = ref(true)
 const loading = ref(false)
+const config = useDefaultConfig()
 
 function mounted() {
-  useGlobalInitForDarkMode()()
+  useInitForDarkMode()()
 }
 
 function onLogin() {
@@ -111,16 +112,19 @@ function onLogin() {
     localStorage.setItem("session", response.sessionId)
     localStorage.setItem("student_number", username.value)
 
-    Net.init()
+
+    setTimeout(() => {
+      Net.init()
+    }, config.minLoadingTimeMillis / 2)
 
     setTimeout(() => {
       router.push('/home')
-    }, 500)
+    }, config.minLoadingTimeMillis)
 
   }).finally(() => {
     setTimeout(() => {
       loading.value = false
-    }, 1000);
+    }, config.minLoadingTimeMillis);
   })
 }
 
