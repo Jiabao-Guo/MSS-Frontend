@@ -295,8 +295,8 @@ const createForm = reactive(props.columns.reduce((acc, column) => {
 const shouldUseSmallPaginationSize = ref(false)
 const shouldShowBackground = ref(true)
 const paginationDisabled = ref(false)
-const uploadFileList = reactive([])
 const uploaderRef = ref(null)
+let uploadFileList = reactive([])
 
 const currentPage = ref(1)
 const pageSize = ref(40)
