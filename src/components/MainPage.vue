@@ -19,7 +19,7 @@
 
                 <el-link
                     class="function-item"
-                    @click="useGlobalToggleDarkMode()()"
+                    @click="useToggleDarkMode()()"
                 >
                   <el-icon>
                     <Moon/>
@@ -95,18 +95,65 @@
                 <template #title>Instructor Management</template>
               </el-menu-item>
 
+              <el-menu-item index="student-management">
+                <template #title>Student Management</template>
+              </el-menu-item>
+
             </el-sub-menu>
 
           </el-menu>
 
           <div class="copyright">
-            © 2023 Jasper - MSS {{ isDebug() ? 'Debug' : 'Release' }} Build
+            © 2023 Jasper - {{ isDebug() ? 'Debug' : 'Release' }} Build
           </div>
         </el-aside>
 
 
         <el-main>
-          <h2 class="current-space">/{{ currentRoute }}</h2>
+          <div class="header-div">
+            <h2 class="current-location">/{{ currentRoute }}</h2>
+
+            <el-popover
+                v-model:visible="popoverVisible"
+                class="el-popper"
+                placement="bottom"
+                trigger="hover"
+                width="300px"
+            >
+              <template #reference>
+                <el-button
+                    :class="'task-button ' + taskButtonClass()"
+                    type="primary"
+                    @click="handleTaskButtonClick"
+                >
+                  {{ tasks.length }} Task(s) Running
+                </el-button>
+              </template>
+
+              <el-table :data="tasks" :show-header="false" class="task-list">
+                <el-table-column>
+                  <template #default="scope">
+                    <div class="task-name-group">
+                      <div class="task-name">{{ scope.row.name }}</div>
+                    </div>
+                    <div :class="descriptionTextClass(scope.row)">
+                      {{ scope.row.description }}
+                    </div>
+                    <el-progress
+                        :percentage="scope.row.progress / scope.row.total * 100"
+                        :show-text="false"
+                    />
+                    <el-link
+                        @click="handleTaskCancel(scope.row)"
+                        class="task-cancel-button"
+                    >
+                      {{ cancelButtonText(scope.row) }}
+                    </el-link>
+                  </template>
+                </el-table-column>
+              </el-table>
+            </el-popover>
+          </div>
           <router-view></router-view>
         </el-main>
       </el-container>
@@ -125,19 +172,39 @@ import {
 import isDebug from "./config";
 import {ElMessage, ElMessageBox} from "element-plus";
 import Net from "@/components/util/network";
-import {onMounted, ref} from "vue";
+import {onMounted, onUnmounted, reactive, ref} from "vue";
 import {
   useDefaultElMessageBoxConfig,
-  useGlobalInitForDarkMode,
-  useGlobalToggleDarkMode
+  useInitForDarkMode,
+  useToggleDarkMode, useTasks, useDefaultConfig
 } from "@/components/util/global";
 import {useRouter} from "vue-router";
 
+/**
+ * [{
+ *  uuid: string,
+ *  name: string,
+ *  progress: number,
+ *  total: number,
+ * }]
+ */
+const tasks = ref([])
 const router = useRouter()
+const didAppearAnimPlayed = ref(false)
+const {getTasks, addTask, removeTask} = useTasks()
+
+const TaskStatusRunning = 0
+const TaskStatusSuccess = 1
+const TaskStatusFailed = 2
+
 
 const name = ref('')
 const currentRoute = ref('')
 const defaultElConfig = useDefaultElMessageBoxConfig()
+const defaultConfig = useDefaultConfig()
+
+const intervalHandle = ref(null)
+const popoverVisible = ref(false)
 
 function handleSelect(s) {
   currentRoute.value = s
@@ -148,13 +215,14 @@ function handleLogout() {
     confirmButtonText: 'Log out',
     cancelButtonText: 'Cancel',
     type: 'warning',
-    ...defaultElConfig(),
+    ...defaultElConfig,
   }).then(() => {
     localStorage.removeItem("session")
     localStorage.removeItem("student_number")
     localStorage.removeItem("student_id")
     router.push('/')
-  }).catch(() => {})
+  }).catch(() => {
+  })
 }
 
 function checkSessionId() {
@@ -167,16 +235,95 @@ function checkSessionId() {
     localStorage.setItem("student_id", response.id)
     ElMessage.success(`Hello, ${response.name}!`)
     router.push('/main')
-    console.log(res)
   })
+}
+
+function taskButtonClass() {
+  if (!didAppearAnimPlayed.value) {
+    return 'task-button-animation-hide'
+  }
+  if (tasks.value.length > 0) {
+    return 'task-button-animation-enter'
+  } else {
+    return 'task-button-animation-exit'
+  }
+}
+
+function handleTaskButtonClick() {
+  popoverVisible.value = !popoverVisible.value
+}
+
+async function handleCreateTask() {
+  let uuid = (await Net.post('/debug', {
+    name: 'test_task'
+  })).data
+  console.log("Created task: " + uuid)
+  addTask(uuid)
+  await refreshTasks()
 }
 
 function mounted() {
   checkSessionId()
-  useGlobalInitForDarkMode()()
+  useInitForDarkMode()()
+  intervalHandle.value = setInterval(refreshTasks, defaultConfig.taskRefreshRateMillis)
+}
+
+function unmounted() {
+  clearInterval(intervalHandle.value)
+}
+
+async function refreshTasks() {
+  let taskUuids = getTasks()
+
+  if (taskUuids.length === 0) {
+    return
+  }
+
+  let taskList = (await Net.get('/task', {
+    uuids: taskUuids.join(',')
+  })).data
+
+  if (taskList.length > 0) {
+    if (!didAppearAnimPlayed.value) {
+      popoverVisible.value = true
+    }
+    didAppearAnimPlayed.value = true
+  }
+
+  tasks.value = taskList.filter(t => !!t)
+}
+
+function handleTaskCancel(task) {
+  useTasks().removeTask(task.uuid)
+  tasks.value = tasks.value.filter(t => t.uuid !== task.uuid)
+  Net.delete(`/task/${task.uuid}`)
+}
+
+function cancelButtonText(task) {
+  switch (task.status) {
+    case TaskStatusRunning:
+      return 'Cancel'
+    case TaskStatusSuccess:
+      return 'OK'
+    case TaskStatusFailed:
+      return 'Dismiss'
+  }
+}
+
+function descriptionTextClass(task) {
+  switch (task.status) {
+    case TaskStatusRunning:
+      return 'task-description'
+    case TaskStatusSuccess:
+      return 'task-description-success'
+    case TaskStatusFailed:
+      return 'task-description-failed'
+  }
 }
 
 onMounted(mounted)
+onUnmounted(unmounted)
+
 </script>
 
 
@@ -186,7 +333,6 @@ onMounted(mounted)
 .common-layout {
   width: 100%;
   height: 100%;
-  position: absolute;
 }
 
 .header-container {
@@ -232,9 +378,102 @@ li .el-menu-item {
   font-size: 28px;
 }
 
-.current-space {
+.header-div {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.current-location {
   font-family: "Courier New", Consolas, Monospaced;
   color: gray;
 }
 
+.task-button {
+  border-radius: 12px;
+}
+
+.task-button-animation-enter {
+  transform: scale(1);
+  animation: task-button-appear 0.5s;
+}
+
+.task-button-animation-exit {
+  transform: scale(0);
+  animation: task-button-disappear 0.3s;
+}
+
+.task-button-animation-hide {
+  display: none;
+}
+
+@keyframes task-button-appear {
+  0% {
+    transform: scale(0.2);
+  }
+  75% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes task-button-disappear {
+  0% {
+    transform: scale(1);
+  }
+  100% {
+    transform: scale(0);
+  }
+}
+
+.task-list {
+  border-radius: 12px;
+}
+
+.task-item {
+  padding: 4px;
+  margin: 8px 4px;
+}
+
+.task-name {
+  font-weight: bold;
+  font-size: 12px;
+  margin-bottom: 2px;
+}
+
+.task-description {
+  font-size: 12px;
+  margin-bottom: 2px;
+}
+
+.task-description-failed {
+  font-size: 12px;
+  margin-bottom: 2px;
+  color: darkred;
+}
+
+.task-description-success {
+  font-size: 12px;
+  margin-bottom: 2px;
+  color: green;
+}
+
+.task-cancel-button {
+  float: right;
+  margin-top: 4px;
+}
+
+.task-name-group {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+</style>
+
+<style>
+.el-popper.is-light {
+  border-radius: 12px !important;
+}
 </style>
