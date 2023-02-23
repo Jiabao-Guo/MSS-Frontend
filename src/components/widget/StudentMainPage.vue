@@ -1,4 +1,5 @@
 <template>
+  <!--
   <el-carousel
       :interval="500"
       height="450px"
@@ -24,6 +25,8 @@
       <img :src="getImageSource(i)"/>
     </el-carousel-item>
   </el-carousel>
+  -->
+  Student Main Page
 </template>
 
 <script setup>
