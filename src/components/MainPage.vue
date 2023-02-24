@@ -45,7 +45,7 @@
               </template>
 
               <el-menu-item-group title="Daily">
-                <el-menu-item index="main">Dashboard</el-menu-item>
+                <el-menu-item index="dashboard">Dashboard</el-menu-item>
                 <el-menu-item index="grade">My Grades</el-menu-item>
               </el-menu-item-group>
 
@@ -98,7 +98,6 @@
               <el-menu-item index="student-management">
                 <template #title>Student Management</template>
               </el-menu-item>
-
             </el-sub-menu>
 
           </el-menu>
@@ -235,7 +234,8 @@ function checkSessionId() {
     localStorage.setItem("student_id", response.id)
     localStorage.setItem("student_name", response.name)
     ElMessage.success(`Hello, ${response.name}!`)
-    router.push('/main')
+    router.push('/dashboard')
+    currentRoute.value = 'dashboard'
   })
 }
 

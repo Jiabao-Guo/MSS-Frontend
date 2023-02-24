@@ -5,16 +5,16 @@
 @forward "element-plus/theme-chalk/src/common/var" with (
   $colors: (
     'primary': (
-     'base': rgb(5, 77, 167),
+     'base': rgb(32, 76, 161),
     ),
     'success': (
-     'base': rgb(0, 128, 0),
+     'base': rgb(42, 92, 44),
     ),
     'warning': (
-     'base': rgb(255, 165, 0),
+     'base': rgb(205, 169, 71),
     ),
     'danger': (
-     'base': rgb(171, 0, 0),
+     'base': rgb(148, 34, 42),
     ),
   ),
 );

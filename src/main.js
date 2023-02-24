@@ -10,14 +10,13 @@ import App from "@/App.vue"
 
 import {createRouter, createWebHistory} from 'vue-router'
 
-import StudentMainPage from "@/components/widget/StudentMainPage.vue"
+import StudentMainPage from "@/components/widget/StudentDashboardPage.vue"
 import StudentSchedule from "@/components/widget/StudentSchedule.vue"
 import StudentCourse from "@/components/widget/StudentCourse.vue"
 import StudentGrade from "@/components/widget/StudentGrade.vue"
 import StudentRate from "@/components/widget/StudentRate.vue"
 import RateForm from "@/components/widget/RateForm.vue"
 import McpApplication from "@/components/widget/StudentMcpApplication.vue"
-import {useDark} from "@vueuse/core";
 import Net from "@/components/util/network";
 import InstructorManagement from "@/components/widget/InstructorManagement.vue";
 import CourseManagement from "@/components/widget/CourseManagement.vue";
@@ -35,7 +34,7 @@ let router = createRouter({
             component: MainPage,
             children: [
                 {
-                    path: '/main',
+                    path: '/dashboard',
                     component: StudentMainPage
                 },
                 {
@@ -73,7 +72,7 @@ let router = createRouter({
                 {
                     path: '/mcp-application',
                     component: McpApplication,
-                },
+                }
             ]
         },
     ]
