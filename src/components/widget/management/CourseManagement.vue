@@ -46,7 +46,27 @@ const columns = reactive([
     },
   },
   {
-    prop: 'instructorByInstructorNumber.name',
+    prop: 'major.name',
+    label: 'Major / Department',
+    dataType: 'string',
+    width: '',
+    asInsert: false,
+    asFilter: true,
+    modifiable: false,
+    createForm: {
+      rules: []
+    },
+    filterForm: {
+      defaultValues: {
+        'major.name': '',
+      },
+    },
+    alias: {
+      'major.name': 'majorName'
+    }
+  },
+  {
+    prop: 'user.name',
     label: 'Taught By',
     dataType: 'string',
     width: '',
@@ -58,16 +78,16 @@ const columns = reactive([
     },
     filterForm: {
       defaultValues: {
-        'instructorByInstructorNumber.name': '',
+        'user.name': '',
       },
     },
     alias: {
-      'instructorByInstructorNumber.name': 'instructorName'
+      'user.name': 'taughtBy'
     }
   },
   {
-    prop: 'instructorByInstructorNumber.instructorNumber',
-    label: 'Instructor Number',
+    prop: 'user.uid',
+    label: 'Instructor UID',
     dataType: 'string',
     width: '',
     asInsert: true,
@@ -76,7 +96,7 @@ const columns = reactive([
     createForm: {},
     filterForm: {},
     alias: {
-      'instructorByInstructorNumber.instructorNumber': 'instructorNumber'
+      'user.uid': 'userId'
     }
   },
 ])

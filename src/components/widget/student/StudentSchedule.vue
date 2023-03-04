@@ -70,10 +70,7 @@ function keyFromDate(date) {
 
 async function reloadSchedule() {
   loading.value = true
-  let res = await Net.post('/schedule/query', {
-    studentNumber: localStorage.getItem("student_number"),
-    sessionId: localStorage.getItem("session"),
-  }).catch(() => {
+  let res = await Net.get('/schedule').catch(() => {
   }).finally(() => {
     setTimeout(() => {
       loading.value = false
@@ -110,14 +107,10 @@ async function handleAddSchedule(event, data) {
     return
   }
 
-  let addScheduleForm = {
-    studentNumber: localStorage.getItem("student_number"),
-    sessionId: localStorage.getItem("session"),
+  let res = await Net.post('/schedule', {
     date: data.date.getTime(),
     subject: subject.value,
-  }
-
-  let res = await Net.post('/schedule', addScheduleForm)
+  })
   ElMessage({
     type: res.data.success ? 'success' : 'error',
     message: res.data.message
@@ -160,6 +153,8 @@ async function handleUpdateSchedule(event, data, oldSchedule) {
             type: r.data.success ? 'success' : 'error',
             message: r.data.message
           })
+          schedules[keyFromDate(data.date)] = schedules[keyFromDate(data.date)]
+              .filter(s => s.id !== oldSchedule.id)
           reloadSchedule()
         })
       }).catch(() => {

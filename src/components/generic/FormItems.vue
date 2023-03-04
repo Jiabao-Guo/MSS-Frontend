@@ -33,19 +33,19 @@
 
       <div v-else-if="c.dataType === 'number-range'">
         <el-row v-if="mode === 'filter'">
-          <el-col :span="6">
+          <el-col :span="10">
             <el-input
                 v-model="targetForm[c.filterForm.minKey]"
-                placeholder="Min"
+                placeholder="Min (Inclusive)"
                 clearable
                 @keydown.enter="$emit('apply-filter')"
             />
           </el-col>
           <div style="margin: 0 4px">~</div>
-          <el-col :span="6">
+          <el-col :span="10">
             <el-input
                 v-model="targetForm[c.filterForm.maxKey]"
-                placeholder="Max"
+                placeholder="Max (Inclusive)"
                 clearable
                 @keydown.enter="$emit('apply-filter')"
             />
@@ -70,12 +70,19 @@
       </div>
 
       <div v-else-if="c.dataType === 'select'">
-        <el-select v-model="targetForm[getProp(c)]" placeholder="Select One">
+        <el-select v-model="targetForm[getProp(c)]" clearable placeholder="Select One">
           <el-option
               v-for="option in c.options"
               :key="option.value"
               :label="option.label"
               :value="option.value"
+          />
+
+          <el-option
+            v-if="mode === 'filter'"
+            :key="c.toString()"
+            label="Doesn't matter"
+            value=""
           />
         </el-select>
       </div>
@@ -117,7 +124,10 @@ defineProps({
 defineEmits(['apply-filter'])
 
 function getProp(c) {
-  return (c.alias || {})[c.prop] || c.prop
+  if (c.alias) {
+    return c.alias[c.prop] || c.prop
+  }
+  return c.prop
 }
 </script>
 

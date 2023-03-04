@@ -13,7 +13,7 @@ import GenericTable from "@/components/generic/GenericTable.vue";
 
 const columns = reactive([
   {
-    prop: 'instructorNumber',
+    prop: 'uid',
     label: 'Instructor Number',
     dataType: 'number',
     width: '180',
@@ -31,7 +31,7 @@ const columns = reactive([
   },
   {
     prop: 'name',
-    label: 'Instructor Name',
+    label: 'Name',
     dataType: 'string',
     width: '',
     asInsert: true,
@@ -47,7 +47,24 @@ const columns = reactive([
     },
   },
   {
-    prop: 'salary',
+    prop: 'email',
+    label: 'Email',
+    dataType: 'string',
+    width: '',
+    asInsert: true,
+    asFilter: true,
+    modifiable: true,
+    createForm: {
+      rules: []
+    },
+    filterForm: {
+      defaultValues: {
+        email: ''
+      },
+    },
+  },
+  {
+    prop: 'instructorInfo.salary',
     label: 'Salary',
     dataType: 'number-range',
     width: '180',

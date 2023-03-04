@@ -8,23 +8,23 @@ import LoginPage from '@/components/LoginPage.vue'
 import MainPage from "@/components/MainPage.vue"
 import App from "@/App.vue"
 
-import {createRouter, createWebHistory} from 'vue-router'
+import {createRouter, createWebHashHistory, createWebHistory} from 'vue-router'
 
-import StudentMainPage from "@/components/widget/StudentMainPage.vue"
-import StudentSchedule from "@/components/widget/StudentSchedule.vue"
-import StudentCourse from "@/components/widget/StudentCourse.vue"
-import StudentGrade from "@/components/widget/StudentGrade.vue"
-import StudentRate from "@/components/widget/StudentRate.vue"
-import RateForm from "@/components/widget/RateForm.vue"
-import McpApplication from "@/components/widget/StudentMcpApplication.vue"
-import {useDark} from "@vueuse/core";
+import StudentDashboardPage from "@/components/widget/student/StudentDashboardPage.vue"
+import StudentSchedule from "@/components/widget/student/StudentSchedule.vue"
+import StudentCourse from "@/components/widget/student/StudentRegistration.vue"
+import StudentGrade from "@/components/widget/student/StudentGrade.vue"
+import StudentRate from "@/components/widget/student/StudentRate.vue"
+import RateForm from "@/components/widget/student/RateForm.vue"
+import McpApplication from "@/components/widget/student/StudentMcpApplication.vue"
 import Net from "@/components/util/network";
-import InstructorManagement from "@/components/widget/InstructorManagement.vue";
-import CourseManagement from "@/components/widget/CourseManagement.vue";
-import StudentManagement from "@/components/widget/StudentManagement.vue";
+import InstructorManagement from "@/components/widget/management/InstructorManagement.vue";
+import CourseManagement from "@/components/widget/management/CourseManagement.vue";
+import StudentManagement from "@/components/widget/management/StudentManagement.vue";
+import UserManagement from "@/components/widget/management/UserManagement.vue";
 
 let router = createRouter({
-    history: createWebHistory(),
+    history: createWebHashHistory(),
     routes: [
         {
             path: '/',
@@ -35,8 +35,8 @@ let router = createRouter({
             component: MainPage,
             children: [
                 {
-                    path: '/main',
-                    component: StudentMainPage
+                    path: '/dashboard',
+                    component: StudentDashboardPage
                 },
                 {
                     path: '/course',
@@ -67,13 +67,17 @@ let router = createRouter({
                     component: StudentManagement,
                 },
                 {
+                    path: '/user-management',
+                    component: UserManagement,
+                },
+                {
                     path: '/rate-form',
                     component: RateForm,
                 },
                 {
                     path: '/mcp-application',
                     component: McpApplication,
-                },
+                }
             ]
         },
     ]
