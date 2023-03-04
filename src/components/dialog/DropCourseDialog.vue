@@ -21,7 +21,7 @@
     </p>
 
     <p>
-      Verify password for {{ props.username }} ({{ props.userNumber }}):
+      Verify password for {{ props.username }} (UID: {{ props.userUid }}):
     </p>
 
     <el-input v-model="inputPassword" type="password" placeholder="Password"/>
@@ -56,7 +56,7 @@ const props = defineProps({
   courseNumber: Number,
   courseName: String,
   username: String,
-  userNumber: String,
+  userUid: String,
 })
 
 const emit = defineEmits(['cancel', 'confirm'])
@@ -91,11 +91,13 @@ async function handleConfirm() {
     return
   }
   loading.value = true
+
+  let passwordSha256Sha256 = sha256(sha256(inputPassword.value))
   let response = await Net.post('/login', {
-    number: props.userNumber,
-    passwordSha256: sha256(inputPassword.value),
-    isStudentLogin: true,
-    verifyOnly: true
+    number: props.userUid,
+    password: passwordSha256Sha256,
+    verifyOnly: true,
+    salt: Net.saltForLogin(passwordSha256Sha256, props.userUid)
   }).catch(() => {
 
   }).finally(() => {

@@ -1,10 +1,11 @@
 import {ref} from "vue";
-import {useDark} from "@vueuse/core";
+import {createGlobalState, useDark} from "@vueuse/core";
+import {StorageKey} from "@/components/util/storage";
 
 export function useSetDarkMode() {
     return function (dark) {
         ref(useDark()).value = !!dark
-        localStorage.setItem('dark', dark ? 'true' : 'false')
+        localStorage.setItem(StorageKey.dark_mode, dark ? '1' : '0')
     }
 }
 
@@ -12,14 +13,14 @@ export function useToggleDarkMode() {
     return function () {
         let current = ref(useDark()).value
         ref(useDark()).value = !current
-        localStorage.setItem('dark', !current ? 'true' : 'false')
+        localStorage.setItem(StorageKey.dark_mode, !current ? '1' : '0')
     }
 }
 
 export function useInitForDarkMode() {
     return function () {
-        let dark = localStorage.getItem('dark')
-        ref(useDark()).value = dark === 'true'
+        let dark = localStorage.getItem(StorageKey.dark_mode)
+        ref(useDark()).value = dark === '1'
     }
 }
 
@@ -69,4 +70,16 @@ export function useDefaultConfig() {
         minLoadingTimeMillis: 500,
         taskRefreshRateMillis: 1000,
     }
+}
+
+
+const tokenExpiry = createGlobalState(() => ref(false))
+const permissionDeniedCounter = createGlobalState(() => ref(0))
+
+export function useTokenExpiry() {
+    return tokenExpiry()
+}
+
+export function usePermissionDeniedCounter() {
+    return permissionDeniedCounter()
 }

@@ -5,16 +5,16 @@
 @forward "element-plus/theme-chalk/src/common/var" with (
   $colors: (
     'primary': (
-     'base': rgb(32, 76, 161),
+     'base': rgb(46,102,204),
     ),
     'success': (
-     'base': rgb(42, 92, 44),
+     'base': rgb(49,143,53),
     ),
     'warning': (
      'base': rgb(205, 169, 71),
     ),
     'danger': (
-     'base': rgb(148, 34, 42),
+     'base': rgb(255, 43, 52),
     ),
   ),
 );
@@ -36,6 +36,8 @@ $color-dark: rgb(18, 18, 18);
 $color-light-background: rgb(243, 243, 243);
 $color-light-background-dimmed: #F8F8F8;
 $color-dark-background: $color-dark;
+$color-dimmed: rgb(168, 168, 168);
+$color-shiny: rgb(251, 114, 153);
 
 // Important: background colors in light mode
 // Does not affect dark mode

@@ -26,6 +26,10 @@
             label="Name"
         />
         <el-table-column
+            prop="course.user.name"
+            label="Taught By"
+        />
+        <el-table-column
             prop="courseRegistrationTime"
             label="Registered At"
         >
@@ -63,7 +67,7 @@
       v-model:show-dialog="showDropDialog"
       :courseNumber="dropCourseNumber"
       :courseName="dropCourseName"
-      :user-number="userNumber"
+      :user-uid="userUid"
       :username="username"
       @cancel="handleCancel"
       @confirm="handleDropConfirm"
@@ -75,7 +79,12 @@ import {onMounted, reactive, ref} from "vue";
 import GenericTable from "@/components/generic/GenericTable.vue";
 import Net from "@/components/util/network";
 import {ElMessage, ElMessageBox} from "element-plus";
-import DropCourseDialog from "@/components/widget/DropCourseDialog.vue";
+import DropCourseDialog from "@/components/dialog/DropCourseDialog.vue";
+import {useDefaultElMessageBoxConfig} from "@/components/util/global";
+import {StorageKey} from "@/components/util/storage";
+import {useLocalStorage} from "@vueuse/core";
+
+const defaultElConfig = useDefaultElMessageBoxConfig()
 
 const selection = ref([])
 const myCourses = ref([])
@@ -83,17 +92,17 @@ const myCourses = ref([])
 const showDropDialog = ref(false)
 const dropCourseNumber = ref(0)
 const dropCourseName = ref('')
-const username = ref(localStorage.getItem("student_name"))
-const userNumber = ref(localStorage.getItem("student_number"))
+const username = ref(localStorage.getItem(StorageKey.username))
+const userUid = useLocalStorage(StorageKey.uid, '0')
 
 const columns = reactive([
   {
     prop: 'courseNumber',
     label: 'Course Number',
     dataType: 'number',
-    asInsert: true,
+    asInsert: false,
     asFilter: true,
-    modifiable: true,
+    modifiable: false,
     createForm: {
       rules: []
     },
@@ -108,9 +117,9 @@ const columns = reactive([
     label: 'Name',
     dataType: 'string',
     width: '',
-    asInsert: true,
+    asInsert: false,
     asFilter: true,
-    modifiable: true,
+    modifiable: false,
     createForm: {
       rules: []
     },
@@ -121,7 +130,27 @@ const columns = reactive([
     },
   },
   {
-    prop: 'instructorByInstructorNumber.name',
+    prop: 'major.name',
+    label: 'Major / Department',
+    dataType: 'string',
+    width: '',
+    asInsert: false,
+    asFilter: true,
+    modifiable: false,
+    createForm: {
+      rules: []
+    },
+    filterForm: {
+      defaultValues: {
+        'major.name': '',
+      },
+    },
+    alias: {
+      'major.name': 'majorName'
+    }
+  },
+  {
+    prop: 'user.name',
     label: 'Taught By',
     dataType: 'string',
     width: '',
@@ -133,25 +162,25 @@ const columns = reactive([
     },
     filterForm: {
       defaultValues: {
-        'instructorByInstructorNumber.name': '',
+        'user.name': '',
       },
     },
     alias: {
-      'instructorByInstructorNumber.name': 'instructorName'
+      'user.name': 'taughtBy'
     }
   },
   {
-    prop: 'instructorByInstructorNumber.instructorNumber',
-    label: 'Instructor Number',
+    prop: 'user.uid',
+    label: 'Instructor UID',
     dataType: 'string',
     width: '',
-    asInsert: true,
+    asInsert: false,
     asFilter: false,
-    modifiable: true,
+    modifiable: false,
     createForm: {},
     filterForm: {},
     alias: {
-      'instructorByInstructorNumber.instructorNumber': 'instructorNumber'
+      'user.uid': 'userId'
     }
   },
 ])
@@ -162,8 +191,7 @@ function handleSelectionUpdated(s) {
 }
 
 async function reloadMyCourses() {
-  let id = localStorage.getItem('student_id')
-  let response = await Net.get(`/student/${id}/course-registration`)
+  let response = await Net.get('/course-registration')
   myCourses.value = response.data || []
 }
 
@@ -172,7 +200,8 @@ async function handleRegister() {
       'Are you sure to register these courses?', 'Confirm', {
         confirmButtonText: 'Confirm',
         cancelButtonText: 'Cancel',
-        type: 'warning'
+        type: 'warning',
+        ...defaultElConfig
       }).catch(() => {
   })
 
@@ -192,14 +221,13 @@ async function handleRegister() {
 }
 
 function handleDrop(row) {
-  dropCourseNumber.value = row.courseNumber
+  dropCourseNumber.value = row.course.courseNumber
   dropCourseName.value = row.course.name
   showDropDialog.value = true
-  console.log(showDropDialog.value)
 }
 
 async function handleDropConfirm() {
-  let registry = myCourses.value.find(it => it.courseNumber === dropCourseNumber.value)
+  let registry = myCourses.value.find(it => it.course.courseNumber === dropCourseNumber.value)
   if (!registry) {
     return
   }
@@ -212,7 +240,8 @@ async function handleDropConfirm() {
         confirmButtonText: `Drop ${registry.course.name} (${dropCourseNumber.value})`,
         showCancelButton: false,
         dangerouslyUseHTMLString: true,
-        type: 'warning'
+        type: 'warning',
+        ...defaultElConfig
       }).catch(() => {
   })
 

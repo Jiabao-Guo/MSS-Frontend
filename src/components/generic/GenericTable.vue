@@ -42,11 +42,22 @@
         @apply-filter="reloadTableData"
     />
 
-    <el-button type="success" size="default" @click="handleApplyFilter">
-      <el-icon>
+    <el-button :disabled="getFilterFormCount() === 0" :type="getFilterFormCount() === 0 ? '' : 'success'" size="default" @click="handleApplyFilter">
+      <el-icon v-if="getFilterFormCount() > 0">
         <Check/>
       </el-icon>&nbsp;
-      Apply Filter
+      {{
+        getFilterFormCount() === 0
+          ? 'No Filter'
+          : `Apply ${getFilterFormCount()} Filter(s)`
+      }}
+    </el-button>
+
+    <el-button v-if="getFilterFormCount() > 0" size="default" @click="handleClearFilter">
+      <el-icon>
+        <Close/>
+      </el-icon>&nbsp;
+      Clear {{ getFilterFormCount() }} Filter(s)
     </el-button>
 
     <div v-if="!viewOnly">
@@ -56,7 +67,7 @@
       <el-divider direction="horizontal"/>
 
       <el-dropdown style="margin-right: 10px;">
-        <el-button type="primary">
+        <el-button>
           <el-icon>
             <Plus/>
           </el-icon>&nbsp;
@@ -155,21 +166,18 @@
           sortable
       >
         <template #default="scope">
-        <span v-if="column.dataType === 'switch'">
-          <el-switch
-              v-model="scope.row[column.prop]"
-              :active-value="1"
-              :inactive-value="0"
-              :disabled="true"
-          />
-        </span>
-        <span v-else-if="column.dataType === 'select'">
-          {{ column.options.find(x => x.value === scope.row[column.prop]).label }}
+        <span v-if="column.dataType === 'select'">
+          {{ column.options.find(x => x.value
+            === ObjectUtil.getNestedProperty(scope.row, column.prop)).label }}
         </span>
         </template>
       </el-table-column>
     </el-table>
   </el-upload>
+
+  <div v-if="!viewOnly" class="drag-tips">
+    Tips: Drag to upload.
+  </div>
 
   <!--------------------------------------------------------
   Add Dialog
@@ -243,6 +251,7 @@ import {
 } from '@element-plus/icons-vue'
 import FormItems from "@/components/generic/FormItems.vue";
 import {useDefaultConfig, useDefaultElMessageBoxConfig, useTasks} from "@/components/util/global";
+import ObjectUtil from "@/components/util/objects";
 
 /// ================== Props ==================
 const props = defineProps({
@@ -258,6 +267,7 @@ const props = defineProps({
   disablePaginationControl: {
     type: Boolean,
     required: false,
+    default: false,
   },
 })
 
@@ -356,10 +366,6 @@ function handleCurrentChange() {
   reloadTableData()
 }
 
-function accessNestedProperty(obj, path) {
-  return path.split('.').reduce((acc, cur) => acc[cur], obj)
-}
-
 async function handleCellClick(row, column) {
   // 要修改的项目，比如双击的是name，那property就是name.
   let targetColumn = props.columns.find((c) => c.label === column.label)
@@ -377,7 +383,7 @@ async function handleCellClick(row, column) {
   // row就是整行的json
   let action = await ElMessageBox.prompt(`Input new ${targetColumn.label}:`, "Edit", {
     // 把现在的值传进去
-    inputValue: accessNestedProperty(row, targetColumn.prop),
+    inputValue: ObjectUtil.getNestedProperty(row, targetColumn.prop),
     //正则 不能为空字符
     inputPattern: /.+/,
     inputErrorMessage: `${property} must not be empty.`,
@@ -390,7 +396,8 @@ async function handleCellClick(row, column) {
     return
   }
 
-  row[property] = action.value
+  ObjectUtil.setNestedProperty(row, targetColumn.prop, action.value)
+  // row[property] = action.value
   let response = await Net.put(`/${props.model}/${row[props.modelKey]}`, row)
 
   ElMessage({
@@ -446,6 +453,23 @@ function getNounLowercased() {
 
 function handleApplyFilter() {
   reloadTableData()
+}
+
+function handleClearFilter() {
+  for (let key in filterForm) {
+    filterForm[key] = ''
+  }
+  reloadTableData()
+}
+
+function getFilterFormCount() {
+  let ret = 0
+  for (let key in filterForm) {
+    if (filterForm[key] && filterForm[key] !== '') {
+      ret++
+    }
+  }
+  return ret
 }
 
 async function handleCreateModel() {
@@ -539,6 +563,13 @@ onMounted(reloadTableData)
 .el-upload-dragger, .el-upload-dragger.is-dragover {
   cursor: pointer;
   padding: 0;
+}
+
+.drag-tips {
+  display: flex;
+  justify-content: center;
+  color: $color-dimmed;
+  font-size: 14px;
 }
 
 </style>

@@ -2,7 +2,7 @@
   <el-card class="card">
     <el-form
         ref="formObject"
-        :model="ruleForm"
+        :model="form"
         :rules="rules"
         label-width="120px"
         class="demo-ruleForm"
@@ -10,11 +10,12 @@
         label-position="right"
         status-icon
     >
-      <el-form-item label="Student number" prop="studentNumber" label-width="150">
-        <el-input v-model="ruleForm.studentNumber"/>
+      <el-form-item label="UID" prop="uid" label-width="150">
+        <el-input v-model="form.uid" disabled/>
       </el-form-item>
+
       <el-form-item label="Marital status" prop="maritalStatus" label-width="150">
-        <el-select v-model="ruleForm.maritalStatus" placeholder="Marital status">
+        <el-select v-model="form.maritalStatus" placeholder="Marital status">
           <el-option label="Single" value="Single"/>
           <el-option label="Married" value="Married"/>
           <el-option label="Divorced" value="Divorced"/>
@@ -25,7 +26,7 @@
         <el-col :span="11">
           <el-form-item prop="applicationTime">
             <el-date-picker
-                v-model="ruleForm.applicationTime"
+                v-model="form.applicationTime"
                 type="date"
                 label="Pick a date"
                 placeholder="Pick a date"
@@ -36,11 +37,11 @@
       </el-form-item>
 
       <el-form-item label="Delivery Card" prop="delivery" label-width="150">
-        <el-switch v-model="ruleForm.delivery"/>
+        <el-switch v-model="form.delivery"/>
       </el-form-item>
 
       <el-form-item label="Identity type" prop="identityType" label-width="150">
-        <el-radio-group v-model="ruleForm.identityType">
+        <el-radio-group v-model="form.identityType">
           <el-radio label="Citizens"/>
           <el-radio label="International Students"/>
           <el-radio label="Homeless"/>
@@ -48,7 +49,7 @@
       </el-form-item>
 
       <el-form-item label="Reason to Canada" prop="reason" label-width="150">
-        <el-input v-model="ruleForm.reason" type="textarea"/>
+        <el-input v-model="form.reason" type="textarea"/>
       </el-form-item>
 
       <el-form-item>
@@ -62,11 +63,13 @@
 <script setup>
 import Net from "@/components/util/network";
 import {reactive, ref} from "vue";
+import {useLocalStorage} from "@vueuse/core";
+import {StorageKey} from "@/components/util/storage";
 
 let formSize = ref('default')
 
-let ruleForm = reactive({
-  studentNumber: '',
+let form = reactive({
+  uid: useLocalStorage(StorageKey.uid, '0').value,
   maritalStatus: '',
   applicationTime: '',
   delivery: false,
@@ -75,10 +78,6 @@ let ruleForm = reactive({
 })
 
 let rules = reactive({
-  studentNumber: [
-    {required: true, message: 'Please input studentNumber', trigger: 'blur'},
-    {min: 3, max: 10, message: 'Length should be 3 to 5', trigger: 'blur'},
-  ],
   maritalStatus: [
     {
       required: true,
@@ -131,11 +130,7 @@ function submitForm() {
     // 如果不通过，invalidFields指的就是哪些不通过
     if (isValid) {
       //post投递到后端
-      Net.post('/mcp-application', {
-        ...ruleForm,
-        studentNumber: localStorage.getItem("student_number"),
-        sessionId: localStorage.getItem("session"),
-      })
+      Net.post('/mcp-application', form)
           .then(res => {
             alert(res.data.message)
           })

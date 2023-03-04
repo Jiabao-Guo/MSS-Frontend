@@ -11,13 +11,14 @@
 </template>
 
 <script setup>
-const imageUrls = [
-    '/src/assets/images/m1.jpg',
-    '/src/assets/images/m2.jpg',
-    '/src/assets/images/m3.jpg',
-    '/src/assets/images/m4.jpg',
-    '/src/assets/images/m5.jpg',
-].map(url => new URL(url, import.meta.url).href)
+import m1 from '/src/assets/images/m1.jpg'
+import m2 from '/src/assets/images/m2.jpg'
+import m3 from '/src/assets/images/m3.jpg'
+import m4 from '/src/assets/images/m4.jpg'
+import m5 from '/src/assets/images/m5.jpg'
+
+const imageUrls = [m1, m2, m3, m4, m5]
+
 </script>
 
 <style lang="scss" scoped>
