@@ -6,8 +6,10 @@
           <div class="header-container">
             <h4 class="header-subtitle">MEMORIAL MSS</h4>
             <h2 class="header-title">
-              Hi, {{ name }}!
-              <div class="function-area">
+              Hi, <span :class="privileged ? 'user-privileged' : 'user-normal'">
+              {{ name }}
+            </span>!
+              <span class="function-area">
                 <el-link
                     class="function-item"
                     @click="handleLogout"
@@ -25,9 +27,13 @@
                     <Moon/>
                   </el-icon>
                 </el-link>
-              </div>
+              </span>
             </h2>
-            <div>System Administrator</div>
+            <div class="roles" v-for="role in roles" :key="role">
+              <el-tag class="role" :type="role === nounPrivilegedUser ? 'danger' : 'info'">
+                {{ capitalize(role) }}
+              </el-tag>
+            </div>
           </div>
 
           <el-menu
@@ -45,12 +51,12 @@
               </template>
 
               <el-menu-item-group title="Daily">
-                <el-menu-item index="main">Dashboard</el-menu-item>
-                <el-menu-item index="grade">My Grades</el-menu-item>
+                <el-menu-item index="dashboard">Dashboard</el-menu-item>
+                <el-menu-item v-if="isStudent()" index="grade">My Grades</el-menu-item>
               </el-menu-item-group>
 
               <el-menu-item-group title="Management">
-                <el-menu-item index="course">Registration</el-menu-item>
+                <el-menu-item v-if="isStudent()" index="course">Registration</el-menu-item>
               </el-menu-item-group>
             </el-sub-menu>
 
@@ -69,17 +75,17 @@
                 <span>Events</span>
               </template>
 
-              <el-menu-item index="rate-form">
+              <el-menu-item v-if="isStudent()" index="rate-form">
                 <template #title>Instructor Evaluation</template>
               </el-menu-item>
 
 
-              <el-menu-item index="mcp-application">
+              <el-menu-item v-if="isStudent()" index="mcp-application">
                 <template #title>MCP Application</template>
               </el-menu-item>
             </el-sub-menu>
 
-            <el-sub-menu index="admin">
+            <el-sub-menu v-if="isAdministrator()" index="admin">
               <template #title>
                 <el-icon>
                   <location/>
@@ -87,18 +93,29 @@
                 <span>System Administration</span>
               </template>
 
+              <el-sub-menu index="user">
+                <template #title>
+                  <el-icon>
+                    <location/>
+                  </el-icon>
+                  <span>Users</span>
+                </template>
+                <el-menu-item index="user-management">
+                  <template #title>User Management</template>
+                </el-menu-item>
+
+                <el-menu-item index="instructor-management">
+                  <template #title>Instructor Information</template>
+                </el-menu-item>
+
+                <el-menu-item index="student-management">
+                  <template #title>Student Information</template>
+                </el-menu-item>
+              </el-sub-menu>
+
               <el-menu-item index="course-management">
                 <template #title>Course Management</template>
               </el-menu-item>
-
-              <el-menu-item index="instructor-management">
-                <template #title>Instructor Management</template>
-              </el-menu-item>
-
-              <el-menu-item index="student-management">
-                <template #title>Student Management</template>
-              </el-menu-item>
-
             </el-sub-menu>
 
           </el-menu>
@@ -158,6 +175,10 @@
         </el-main>
       </el-container>
     </el-container>
+
+    <div class="uid">
+      UID: {{ uid }}
+    </div>
   </div>
 </template>
 
@@ -172,13 +193,15 @@ import {
 import isDebug from "./config";
 import {ElMessage, ElMessageBox} from "element-plus";
 import Net from "@/components/util/network";
-import {onMounted, onUnmounted, reactive, ref} from "vue";
+import {onMounted, onUnmounted, reactive, ref, watch} from "vue";
 import {
   useDefaultElMessageBoxConfig,
   useInitForDarkMode,
-  useToggleDarkMode, useTasks, useDefaultConfig
+  useToggleDarkMode, useTasks, useDefaultConfig, useTokenExpiry, usePermissionDeniedCounter
 } from "@/components/util/global";
 import {useRouter} from "vue-router";
+import {removeLocalStorageAsync, StorageKey} from "@/components/util/storage";
+import {useLocalStorage} from "@vueuse/core";
 
 /**
  * [{
@@ -197,17 +220,45 @@ const TaskStatusRunning = 0
 const TaskStatusSuccess = 1
 const TaskStatusFailed = 2
 
-
 const name = ref('')
 const currentRoute = ref('')
+const privileged = useLocalStorage(StorageKey.privileged, false)
 const defaultElConfig = useDefaultElMessageBoxConfig()
 const defaultConfig = useDefaultConfig()
+const uid = useLocalStorage(StorageKey.uid, '0')
 
+const nounPrivilegedUser = 'Superuser'
 const intervalHandle = ref(null)
 const popoverVisible = ref(false)
+const roles = reactive(
+    useLocalStorage(StorageKey.roles, 'Guest').value
+        .split(',')
+        .filter(s => s.length > 0)
+)
+
+if (privileged.value) {
+  roles.unshift(nounPrivilegedUser)
+}
+
+function isStudent() {
+  return roles.includes('STUDENT')
+}
+
+function isInstructor() {
+  return roles.includes('INSTRUCTOR')
+}
+
+function isAdministrator() {
+  return roles.includes('ADMINISTRATOR')
+}
 
 function handleSelect(s) {
   currentRoute.value = s
+}
+
+function capitalize(s) {
+  s = s.toLowerCase()
+  return s.charAt(0).toUpperCase() + s.slice(1)
 }
 
 function handleLogout() {
@@ -217,25 +268,27 @@ function handleLogout() {
     type: 'warning',
     ...defaultElConfig,
   }).then(() => {
-    localStorage.removeItem("session")
-    localStorage.removeItem("student_number")
-    localStorage.removeItem("student_id")
+    removeLocalStorageAsync(StorageKey.token)
+    removeLocalStorageAsync(StorageKey.username)
+    removeLocalStorageAsync(StorageKey.roles)
+    removeLocalStorageAsync(StorageKey.privileged)
+    removeLocalStorageAsync(StorageKey.uid)
+    removeLocalStorageAsync(StorageKey.session_expires_at)
     router.push('/')
   }).catch(() => {
   })
 }
 
-function checkSessionId() {
-  Net.post('/greetings', {
-    studentNumber: localStorage.getItem("student_number"),
-    sessionId: localStorage.getItem("session"),
-  }).then(res => {
-    let response = res.data
-    name.value = response.name
-    localStorage.setItem("student_id", response.id)
-    ElMessage.success(`Hello, ${response.name}!`)
-    router.push('/main')
-  })
+async function checkToken() {
+  let response = await Net.post('/greetings')
+  response = response.data
+  name.value = response.name
+
+  localStorage.setItem(StorageKey.username, response.name)
+  ElMessage.success(`Hello, ${response.name}!`)
+  currentRoute.value = 'dashboard'
+
+  await router.push('/dashboard')
 }
 
 function taskButtonClass() {
@@ -259,17 +312,50 @@ async function handleCreateTask() {
   })).data
   console.log("Created task: " + uuid)
   addTask(uuid)
-  await refreshTasks()
+  await tickEvent()
 }
 
 function mounted() {
-  checkSessionId()
+  checkToken()
   useInitForDarkMode()()
-  intervalHandle.value = setInterval(refreshTasks, defaultConfig.taskRefreshRateMillis)
+  intervalHandle.value = setInterval(tickEvent, defaultConfig.taskRefreshRateMillis)
+
+  const tokenExpired = useTokenExpiry()
+  watch(tokenExpired, async () => {
+    if (!tokenExpired.value) {
+      return
+    }
+    await ElMessageBox.confirm('Your session has expired, please log in again.', 'Session Expired', {
+      confirmButtonText: 'Log in',
+      cancelButtonText: 'Cancel',
+      type: 'info',
+      ...defaultElConfig,
+    }).catch(() => {
+    })
+
+    localStorage.removeItem(StorageKey.token)
+    localStorage.removeItem(StorageKey.uid)
+    localStorage.removeItem(StorageKey.username)
+    await router.push('/')
+  })
+
+  const permissionDeniedCounter = usePermissionDeniedCounter()
+  watch(permissionDeniedCounter, () => {
+    ElMessageBox.alert('You need the corresponding permission to access this item.', 'Permission Error', {
+      confirmButtonText: 'OK',
+      type: 'info',
+      ...defaultElConfig,
+    }).catch(() => {
+    })
+  })
 }
 
 function unmounted() {
   clearInterval(intervalHandle.value)
+}
+
+function tickEvent() {
+  refreshTasks()
 }
 
 async function refreshTasks() {
@@ -328,7 +414,7 @@ onUnmounted(unmounted)
 
 
 <style lang="scss" scoped>
-@use "src/assets/main";
+@use "src/assets/main" as *;
 
 .common-layout {
   width: 100%;
@@ -342,7 +428,6 @@ onUnmounted(unmounted)
 .header-title {
   left: 20px;
   margin-bottom: 4px;
-  word-wrap: anywhere;
 }
 
 .header-subtitle {
@@ -470,10 +555,48 @@ li .el-menu-item {
   justify-content: space-between;
   align-items: center;
 }
+
+.roles {
+  display: inline;
+}
+
+.role {
+  margin: 2px;
+}
+
+.user-normal {
+
+}
+
+.user-privileged {
+  color: $color-shiny;
+}
+
+.el-tag.el-tag--danger {
+  --el-tag-bg-color: $color-shiny;
+  color: $color-shiny;
+}
+
+.el-tag.el-tag--danger.dark {
+  --el-tag-bg-color: $color-shiny;
+  color: $color-shiny;
+}
+
+.uid {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  color: $color-dimmed;
+  opacity: 0.7;
+}
 </style>
 
 <style>
 .el-popper.is-light {
+  border-radius: 12px !important;
+}
+
+.el-sub-menu__title {
   border-radius: 12px !important;
 }
 </style>

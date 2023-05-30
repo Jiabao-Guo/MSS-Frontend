@@ -15,8 +15,8 @@
             <el-col>
               <el-input
                   @keydown.enter="onLogin"
-                  class="input-frame" v-model="username"
-                  :placeholder="isStudentLogin ? 'Student Number' : 'Instructor Number'"
+                  class="input-frame" v-model="uid"
+                  placeholder="Account UID"
               ></el-input>
             </el-col>
 
@@ -28,16 +28,10 @@
           </el-row>
         </p>
 
-        <div style="margin: 2px 6px; color: gray; ">
-          <el-radio-group v-model="isStudentLogin">
-            <el-radio :label="true">Student</el-radio>
-            <el-radio :label="false">Instructor</el-radio>
-          </el-radio-group>
-        </div>
-
         <p>
           <el-button
               size="large" type="success" class="login"
+              :disabled="!uid || !password"
               @click="onLogin"
           >
             Login
@@ -59,73 +53,97 @@
 
 <script setup>
 import {
-  Moon
+  Moon,
 } from '@element-plus/icons-vue'
-import {ElMessage} from "element-plus"
+import {ElMessage, ElMessageBox} from "element-plus"
 import {sha256} from "js-sha256"
 import Net from "@/components/util/network"
 import {onMounted, ref} from "vue"
-import {useDefaultConfig, useInitForDarkMode, useToggleDarkMode} from "@/components/util/global"
+import {
+  useDefaultConfig,
+  useDefaultElMessageBoxConfig,
+  useInitForDarkMode,
+  useToggleDarkMode,
+  useTokenExpiry
+} from "@/components/util/global"
 import {useRouter} from "vue-router";
+import isDebug from "@/components/config";
+import {removeLocalStorageAsync, saveToLocalStorageAsync, StorageKey} from "@/components/util/storage";
+import {useLocalStorage} from "@vueuse/core";
 
 const router = useRouter()
 
-const username = ref('')
+const uid = ref('')
 const password = ref('')
-const isStudentLogin = ref(true)
 const loading = ref(false)
 const config = useDefaultConfig()
+const defaultElConfig = useDefaultElMessageBoxConfig()
 
 function mounted() {
   useInitForDarkMode()()
+
+
+  // TODO: remove this
+  if (!isDebug()) {
+    ElMessageBox.alert(
+        '服务器在多伦多 国内访问很可能很慢 正在迁移和解决国内要求备案问题<br><br>' +
+        'Admin Username: <span style="font-weight: bold; color: deepskyblue">1</span><br>' +
+        'Admin Password: <span style="font-weight: bold; color: deepskyblue">123</span><br>' +
+        'Method: Student Login', 'Preview Build', {
+          confirmButtonText: 'OK',
+          type: 'info',
+          dangerouslyUseHTMLString: true,
+          ...defaultElConfig,
+        })
+  }
 }
 
-function onLogin() {
+async function onLogin() {
   loading.value = true
-  Net.post('/login', {
-    /**
-     * 后端loginEntity 根据以下三个属性编写
-     * */
-    number: username.value,
-    passwordSha256: sha256(password.value),
-    isStudentLogin: isStudentLogin.value
-  }).then(res => {
+  let passwordSha256Sha256 = sha256(sha256(password.value))
+  await removeLocalStorageAsync(StorageKey.token)
 
-    /** 将前端方法返回的结果 全部存入 res.data 并且用 response接收*/
-    let response = res.data
-
-    if (!response.success) {
-      ElMessage({
-        message: response.message,
-        type: 'error'
-      })
-      return
-    }
+  let response = await Net.post('/login', {
+    number: uid.value,
+    password: passwordSha256Sha256,
+    verifyOnly: false,
+    salt: Net.saltForLogin(passwordSha256Sha256, uid.value)
+  }).catch(err => {
+    console.error(err)
     ElMessage({
-      message: response.message,
-      type: 'success'
+      message: 'Network error or server down',
+      type: 'error'
     })
-
-    /**  用过response.sessionId 拿到后端设置的值(手环)
-     *   二次加密
-     */
-    localStorage.setItem("session", response.sessionId)
-    localStorage.setItem("student_number", username.value)
-
-
-    setTimeout(() => {
-      Net.init()
-    }, config.minLoadingTimeMillis / 2)
-
-    setTimeout(() => {
-      router.push('/home')
-    }, config.minLoadingTimeMillis)
-
   }).finally(() => {
     setTimeout(() => {
       loading.value = false
     }, config.minLoadingTimeMillis);
   })
+
+  response = response.data
+  if (!response.success) {
+    ElMessage({
+      message: response.message,
+      type: 'error'
+    })
+    return
+  }
+  ElMessage({
+    message: response.message,
+    type: 'success'
+  })
+
+  const roles = response.roles.join(',')
+
+  await saveToLocalStorageAsync(StorageKey.uid, uid.value.toString())
+  await saveToLocalStorageAsync(StorageKey.session_expires_at, response.expiresAt.toString())
+  await saveToLocalStorageAsync(StorageKey.token, response.token)
+  await saveToLocalStorageAsync(StorageKey.roles, roles === '' ? 'Guest' : roles)
+  await saveToLocalStorageAsync(StorageKey.privileged, response.privileged.toString())
+
+  Net.init()
+
+  await router.push('/home')
 }
 
 onMounted(mounted)

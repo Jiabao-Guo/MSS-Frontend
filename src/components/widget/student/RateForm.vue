@@ -27,16 +27,16 @@
       <el-form-item label="Instructor Name" prop="instructorNumber">
         <el-select
             filterable
-            v-model="form.instructorNumber"
+            v-model="form.instructorUid"
             remote
             remote-show-suffix
             :remote-method="remoteMethod"
             :loading="loading">
           <el-option
               v-for="item in instructors"
-              :key="item.instructorNumber"
-              :label="`${item.name} (${item.instructorNumber})`"
-              :value="item.instructorNumber"
+              :key="item.uid"
+              :label="`${item.name} (${item.uid})`"
+              :value="item.uid"
           >
             <!-- key是vue要的东西，它只是想要个不一样的值，具体给什么它不关心 -->
             <!-- 这里item.instructorNumber，作为教授的工号，它恰好是个每人都不一样的值 -->
@@ -136,7 +136,7 @@ const loading = ref(false)
 const instructors = ref([])
 
 const form = reactive({
-  instructorNumber: '',
+  instructorUid: '',
   region: '',
   lectureStartDate: '',
   lectureEndDate: '',
@@ -147,7 +147,7 @@ const form = reactive({
 })
 
 const rules = reactive({
-  instructorNumber: [
+  instructorUid: [
     {required: true, message: 'Please enter instructor name.'},
   ],
   lectureStartDate: [
@@ -162,11 +162,7 @@ const rules = reactive({
 function onSubmit() {
   formObject.value.validate((isValid) => {
     if (isValid) {
-      Net.post('/professor-evaluation', {
-        ...form,
-        studentNumber: localStorage.getItem("student_number"),
-        sessionId: localStorage.getItem("session"),
-      })
+      Net.post('/professor-evaluation', form)
           .then(res => {
             alert(res.data.message)
           })

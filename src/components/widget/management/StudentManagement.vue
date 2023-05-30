@@ -13,8 +13,8 @@ import GenericTable from "@/components/generic/GenericTable.vue";
 
 const columns = reactive([
   {
-    prop: 'studentNumber',
-    label: 'Student Number',
+    prop: 'uid',
+    label: 'UID',
     dataType: 'number',
     width: '180',
     asInsert: true,
@@ -30,7 +30,7 @@ const columns = reactive([
     }
   },
   {
-    prop: 'studentName',
+    prop: 'name',
     label: 'Name',
     dataType: 'string',
     width: '',
@@ -47,7 +47,24 @@ const columns = reactive([
     },
   },
   {
-    prop: 'age',
+    prop: 'email',
+    label: 'Email',
+    dataType: 'string',
+    width: '',
+    asInsert: true,
+    asFilter: true,
+    modifiable: true,
+    createForm: {
+      rules: []
+    },
+    filterForm: {
+      defaultValues: {
+        email: ''
+      },
+    },
+  },
+  {
+    prop: 'studentInfo.age',
     label: 'Age',
     dataType: 'number-range',
     width: '180',
@@ -58,16 +75,16 @@ const columns = reactive([
       rules: []
     },
     filterForm: {
-      minKey: 'ageMin',
-      maxKey: 'ageMax',
+      minKey: 'ageLowerBound',
+      maxKey: 'ageUpperBound',
       defaultValues: {
-        min: '',
-        max: ''
+        ageLowerBound: '',
+        ageUpperBound: ''
       },
-    },
+    }
   },
   {
-    prop: 'gender',
+    prop: 'studentInfo.gender',
     label: 'Gender',
     dataType: 'select',
     options: [
@@ -88,8 +105,11 @@ const columns = reactive([
     },
     filterForm: {
       defaultValues: {
-        gender: ''
+        'studentInfo.gender': ''
       }
+    },
+    alias: {
+      'studentInfo.gender': 'gender'
     }
   }
 ])
